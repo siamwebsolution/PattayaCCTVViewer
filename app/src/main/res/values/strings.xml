@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">Pattaya CCTV</string>
+    <string name="brand_title">PATTAYA CCTV</string>
+    <string name="brand_subtitle">กล้องวงจรปิดเมืองพัทยา</string>
+    <string name="splash_title">PATTAYA CCTV</string>
+    <string name="splash_subtitle">ระบบเปิดดูกล้องวงจรปิดเมืองพัทยา</string>
+    <string name="hero_badge">PATTAYA CITY • LIVE CCTV</string>
+    <string name="hero_title">เมืองพัทยา สดทุกมุมมอง</string>
+    <string name="hero_message">เปิดดูกล้องสด ค้นหากล้อง และบันทึกกล้องที่ดูบ่อยไว้ในรายการโปรด</string>
+    <string name="home_choose">เลือกเมนูที่ต้องการ</string>
+    <string name="home_live">📹  ดูกล้องสด</string>
+    <string name="home_search">🔎  ค้นหากล้อง</string>
+    <string name="home_favorites">★  กล้องโปรด</string>
+    <string name="home_source">เชื่อมต่อข้อมูลจาก livestream.pattaya.go.th</string>
+    <string name="viewer_title">CCTV Streaming เมืองพัทยา</string>
+    <string name="back_home">‹ หน้าแรก</string>
+    <string name="favorites_title">กล้องโปรด</string>
+    <string name="favorites_empty">ยังไม่มีกล้องโปรด\nเปิดกล้องแล้วกด ☆ ด้านบนเพื่อบันทึกไว้</string>
+    <string name="favorite_added">เพิ่มในกล้องโปรดแล้ว</string>
+    <string name="favorite_choose_camera">กรุณาเปิดกล้องที่ต้องการก่อน แล้วกด ☆ เพื่อบันทึก</string>
+    <string name="favorite_removed">นำออกจากกล้องโปรดแล้ว</string>
+    <string name="add_favorite">เพิ่มกล้องนี้เป็นรายการโปรด</string>
+    <string name="remove_favorite">นำกล้องนี้ออกจากรายการโปรด</string>
+    <string name="search_hint">แตะช่อง Search camera บนหน้าเว็บ แล้วพิมพ์ชื่อหรือรหัสกล้อง</string>
+    <string name="theme_system">ธีม: ระบบ</string>
+    <string name="theme_light">ธีม: สว่าง</string>
+    <string name="theme_dark">ธีม: มืด</string>
+    <string name="refresh">รีเฟรช</string>
+    <string name="open_browser">เปิดในเบราว์เซอร์</string>
+    <string name="open">เปิด</string>
+    <string name="load_error_title">ไม่สามารถเปิดระบบ CCTV ได้</string>
+    <string name="load_error_message">กรุณาตรวจสอบอินเทอร์เน็ต แล้วลองใหม่อีกครั้ง</string>
+    <string name="retry">ลองใหม่</string>
+    <string name="city_logo">โลโก้เมืองพัทยา</string>
+    <string name="mayor_photo">รูปนายกเมืองพัทยา</string>
+</resources>

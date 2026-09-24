@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_header_gradient"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="32dp">
+
+    <FrameLayout
+        android:layout_width="156dp"
+        android:layout_height="156dp"
+        android:background="@drawable/bg_logo_circle"
+        android:padding="8dp">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/city_logo"
+            android:scaleType="fitCenter"
+            android:src="@drawable/logo_pattaya_city" />
+    </FrameLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:gravity="center"
+        android:text="@string/splash_title"
+        android:textColor="@color/white"
+        android:textSize="26sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:text="@string/splash_subtitle"
+        android:textColor="#DCEFFF"
+        android:textSize="14sp" />
+
+    <ProgressBar
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginTop="28dp"
+        android:indeterminateTint="@color/white" />
+</LinearLayout>

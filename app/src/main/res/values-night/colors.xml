@@ -1,0 +1,11 @@
+<resources>
+    <color name="pattaya_blue">#58B8F5</color>
+    <color name="pattaya_blue_dark">#061E31</color>
+    <color name="pattaya_sky">#67C5FF</color>
+    <color name="pattaya_surface">#13202B</color>
+    <color name="pattaya_text">#EEF7FD</color>
+    <color name="pattaya_text_muted">#A9BECC</color>
+    <color name="pattaya_border">#2A4050</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>
