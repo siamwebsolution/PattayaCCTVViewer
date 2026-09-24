@@ -340,7 +340,7 @@ class MainActivity : AppCompatActivity() {
         if (rawUrl.isNullOrBlank()) return null
 
         // Decode more than once because liff.state can itself contain an encoded route.
-        var decoded = rawUrl
+        var decoded: String = rawUrl
         repeat(3) {
             val next = Uri.decode(decoded)
             if (next == decoded) return@repeat
