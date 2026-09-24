@@ -28,6 +28,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.pattayacctv.viewer.databinding.ActivityMainBinding
+import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
 
@@ -132,6 +133,9 @@ class MainActivity : AppCompatActivity() {
                 if (!pageFailed) binding.errorPanel.visibility = View.GONE
                 binding.viewerTitle.text = view?.title?.takeIf { it.isNotBlank() } ?: getString(R.string.viewer_title)
                 updateFavoriteButton(url)
+                view?.evaluateJavascript("(function(){return window.location.href;})();") { jsValue ->
+                    updateFavoriteButton(decodeJavascriptString(jsValue) ?: url)
+                }
                 if (focusSearchAfterLoad) {
                     focusSearchAfterLoad = false
                     focusCameraSearch()
@@ -289,35 +293,92 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun toggleCurrentFavorite() {
-        val url = binding.webView.url ?: return
-        if (!url.startsWith("https://livestream.pattaya.go.th")) return
-        if (!url.contains("/live-cctv/")) {
-            Toast.makeText(this, R.string.favorite_choose_camera, Toast.LENGTH_SHORT).show()
-            return
+        // The Pattaya site keeps the selected camera in liff.state, for example:
+        // https://livestream.pattaya.go.th/?liff.state=%2Flive-cctv%2FCC-012
+        // Some versions of the site change this URL with JavaScript, so read location.href
+        // from inside WebView instead of relying only on WebView.url.
+        binding.webView.evaluateJavascript("(function(){return window.location.href;})();") { jsValue ->
+            val liveUrl = decodeJavascriptString(jsValue) ?: binding.webView.url
+            val cameraId = extractCameraId(liveUrl)
+            if (cameraId == null) {
+                Toast.makeText(this, R.string.favorite_choose_camera, Toast.LENGTH_SHORT).show()
+                return@evaluateJavascript
+            }
+
+            val canonicalUrl = cameraUrl(cameraId)
+            val set = favorites()
+            val added = if (set.any { extractCameraId(it).equals(cameraId, ignoreCase = true) }) {
+                set.removeAll { extractCameraId(it).equals(cameraId, ignoreCase = true) }
+                false
+            } else {
+                set.add(canonicalUrl)
+                true
+            }
+
+            saveFavorites(set)
+            updateFavoriteButton(canonicalUrl)
+            Toast.makeText(
+                this,
+                if (added) R.string.favorite_added else R.string.favorite_removed,
+                Toast.LENGTH_SHORT
+            ).show()
         }
-        val set = favorites()
-        val added = if (set.contains(url)) {
-            set.remove(url)
-            false
-        } else {
-            set.add(url)
-            true
-        }
-        saveFavorites(set)
-        updateFavoriteButton(url)
-        Toast.makeText(
-            this,
-            if (added) R.string.favorite_added else R.string.favorite_removed,
-            Toast.LENGTH_SHORT
-        ).show()
     }
 
     private fun updateFavoriteButton(url: String?) {
-        val isFavorite = url != null && favorites().contains(url)
+        val cameraId = extractCameraId(url)
+        val isFavorite = cameraId != null &&
+            favorites().any { extractCameraId(it).equals(cameraId, ignoreCase = true) }
+
         binding.favoriteCurrentButton.text = if (isFavorite) "★" else "☆"
         binding.favoriteCurrentButton.contentDescription = getString(
             if (isFavorite) R.string.remove_favorite else R.string.add_favorite
         )
+    }
+
+    private fun extractCameraId(rawUrl: String?): String? {
+        if (rawUrl.isNullOrBlank()) return null
+
+        // Decode more than once because liff.state can itself contain an encoded route.
+        var decoded = rawUrl
+        repeat(3) {
+            val next = Uri.decode(decoded)
+            if (next == decoded) return@repeat
+            decoded = next
+        }
+
+        Regex("""/live-cctv/([A-Za-z0-9_-]+)""", RegexOption.IGNORE_CASE)
+            .find(decoded)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?.takeIf { it.isNotBlank() }
+            ?.let { return it }
+
+        return runCatching {
+            val uri = Uri.parse(rawUrl)
+            val state = uri.getQueryParameter("liff.state")
+            state?.let {
+                Regex("""/live-cctv/([A-Za-z0-9_-]+)""", RegexOption.IGNORE_CASE)
+                    .find(Uri.decode(it))
+                    ?.groupValues
+                    ?.getOrNull(1)
+            }
+        }.getOrNull()
+    }
+
+    private fun cameraUrl(cameraId: String): String {
+        val state = "/live-cctv/$cameraId"
+        return Uri.parse(BASE_URL).buildUpon()
+            .appendQueryParameter("liff.state", state)
+            .build()
+            .toString()
+    }
+
+    private fun decodeJavascriptString(value: String?): String? {
+        if (value.isNullOrBlank() || value == "null") return null
+        return runCatching {
+            JSONObject("{\"value\":$value}").getString("value")
+        }.getOrNull()
     }
 
     private fun renderFavorites() {
@@ -381,8 +442,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun cameraLabel(url: String): String {
-        val id = Regex("/live-cctv/([^/?#]+)", RegexOption.IGNORE_CASE).find(url)?.groupValues?.getOrNull(1)
-        return if (!id.isNullOrBlank()) "กล้อง $id" else url.removePrefix(BASE_URL).ifBlank { getString(R.string.viewer_title) }
+        val id = extractCameraId(url)
+        return if (!id.isNullOrBlank()) "กล้อง $id"
+        else url.removePrefix(BASE_URL).ifBlank { getString(R.string.viewer_title) }
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
