@@ -179,7 +179,7 @@ class MainActivity : AppCompatActivity() {
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
                 )
-                setImmersive(true)
+                setFullscreenImmersive(true)
             }
 
             override fun onHideCustomView() = hideCustomView()
@@ -409,10 +409,10 @@ class MainActivity : AppCompatActivity() {
         customViewCallback?.onCustomViewHidden()
         customView = null
         customViewCallback = null
-        setImmersive(false)
+        setFullscreenImmersive(false)
     }
 
-    private fun setImmersive(enabled: Boolean) {
+    private fun setFullscreenImmersive(enabled: Boolean) {
         val controller = WindowInsetsControllerCompat(window, window.decorView)
         if (enabled) {
             controller.hide(WindowInsetsCompat.Type.systemBars())
