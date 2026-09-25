@@ -265,6 +265,9 @@ class MainActivity : AppCompatActivity() {
         binding.mapButton.setOnClickListener { openMapView() }
         binding.alertsButton.setOnClickListener { showAlertsInfo() }
         binding.contactsButton.setOnClickListener { showImportantContacts() }
+        binding.eventsButton.setOnClickListener { showEvents() }
+        binding.eventsBackButton.setOnClickListener { showHome() }
+        binding.eventsRefreshButton.setOnClickListener { loadEvents(true) }
 
         binding.situationTraffic.setOnClickListener { openViewer(BASE_URL, true) }
         binding.situationFlood.setOnClickListener { openMapView() }
@@ -339,6 +342,7 @@ class MainActivity : AppCompatActivity() {
                         binding.webView.goBack()
                     binding.viewerPanel.visibility == View.VISIBLE -> showHome()
                     binding.favoritesPanel.visibility == View.VISIBLE -> showHome()
+                    binding.eventsPanel.visibility == View.VISIBLE -> showHome()
                     binding.morePanel.visibility == View.VISIBLE -> showHome()
                     else -> finish()
                 }
@@ -349,6 +353,7 @@ class MainActivity : AppCompatActivity() {
     private fun openViewer(url: String, focusSearch: Boolean) {
         binding.homePanel.visibility = View.GONE
         binding.favoritesPanel.visibility = View.GONE
+        binding.eventsPanel.visibility = View.GONE
         binding.morePanel.visibility = View.GONE
         binding.viewerPanel.visibility = View.VISIBLE
         focusSearchAfterLoad = focusSearch
@@ -371,6 +376,7 @@ class MainActivity : AppCompatActivity() {
     private fun showHome() {
         binding.viewerPanel.visibility = View.GONE
         binding.favoritesPanel.visibility = View.GONE
+        binding.eventsPanel.visibility = View.GONE
         binding.morePanel.visibility = View.GONE
         binding.homePanel.visibility = View.VISIBLE
 
@@ -385,6 +391,7 @@ class MainActivity : AppCompatActivity() {
         renderFavorites()
         binding.homePanel.visibility = View.GONE
         binding.viewerPanel.visibility = View.GONE
+        binding.eventsPanel.visibility = View.GONE
         binding.morePanel.visibility = View.GONE
         binding.favoritesPanel.visibility = View.VISIBLE
 
@@ -395,9 +402,152 @@ class MainActivity : AppCompatActivity() {
         binding.homePanel.visibility = View.GONE
         binding.viewerPanel.visibility = View.GONE
         binding.favoritesPanel.visibility = View.GONE
+        binding.eventsPanel.visibility = View.GONE
         binding.morePanel.visibility = View.VISIBLE
 
         binding.bottomNavigation.menu.findItem(R.id.nav_more).isChecked = true
+    }
+
+    private fun showEvents() {
+        binding.homePanel.visibility = View.GONE
+        binding.viewerPanel.visibility = View.GONE
+        binding.favoritesPanel.visibility = View.GONE
+        binding.morePanel.visibility = View.GONE
+        binding.eventsPanel.visibility = View.VISIBLE
+
+        binding.bottomNavigation.menu.findItem(R.id.nav_home).isChecked = true
+        loadEvents(false)
+    }
+
+    private fun loadEvents(forceRefresh: Boolean) {
+        binding.eventsProgress.visibility = View.VISIBLE
+        binding.eventsEmpty.visibility = View.GONE
+        binding.eventsRefreshButton.isEnabled = false
+
+        if (forceRefresh) {
+            binding.eventsList.removeAllViews()
+            binding.eventsUpdated.text = "กำลังอัปเดตกิจกรรมล่าสุด..."
+        }
+
+        Thread {
+            val result = runCatching { PattayaEventsRepository.fetchEvents() }
+            runOnUiThread {
+                binding.eventsProgress.visibility = View.GONE
+                binding.eventsRefreshButton.isEnabled = true
+
+                val events = result.getOrNull()
+                if (events == null) {
+                    if (binding.eventsList.childCount == 0) {
+                        binding.eventsEmpty.visibility = View.VISIBLE
+                        binding.eventsEmpty.text =
+                            "ไม่สามารถโหลดกิจกรรมได้ในขณะนี้\nแตะปุ่ม อัปเดต เพื่อลองอีกครั้ง"
+                    }
+                    binding.eventsUpdated.text = "เชื่อมต่อ API ไม่สำเร็จ"
+                    return@runOnUiThread
+                }
+
+                renderEvents(events)
+                val time = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("th", "TH")).format(Date())
+                binding.eventsUpdated.text =
+                    "อัปเดตล่าสุด: $time • ข้อมูลจาก khunsri.com"
+            }
+        }.start()
+    }
+
+    private fun renderEvents(events: List<PattayaEventsRepository.PattayaEvent>) {
+        binding.eventsList.removeAllViews()
+        binding.eventsEmpty.visibility = if (events.isEmpty()) View.VISIBLE else View.GONE
+        if (events.isEmpty()) {
+            binding.eventsEmpty.text = "ขณะนี้ยังไม่มีกิจกรรมที่แสดงในระบบ"
+            return
+        }
+
+        events.forEach { event ->
+            binding.eventsList.addView(createEventCard(event))
+        }
+    }
+
+    private fun createEventCard(event: PattayaEventsRepository.PattayaEvent): View {
+        val card = MaterialCardView(this).apply {
+            radius = dp(18).toFloat()
+            cardElevation = dp(1).toFloat()
+            strokeWidth = dp(1)
+            setStrokeColor(getColor(R.color.pattaya_border))
+            setCardBackgroundColor(getColor(R.color.pattaya_surface))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dp(10)
+            }
+        }
+
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(15), dp(13), dp(15), dp(13))
+        }
+
+        event.category?.takeIf { it.isNotBlank() }?.let { category ->
+            box.addView(TextView(this).apply {
+                text = "🏷️ $category"
+                textSize = 10.5f
+                setTextColor(getColor(R.color.pattaya_blue))
+                setTypeface(typeface, Typeface.BOLD)
+            })
+        }
+
+        box.addView(TextView(this).apply {
+            text = event.title
+            textSize = 17f
+            setTypeface(typeface, Typeface.BOLD)
+            setTextColor(getColor(R.color.pattaya_text))
+            setPadding(0, dp(3), 0, 0)
+        })
+
+        event.dateText?.takeIf { it.isNotBlank() }?.let { dateText ->
+            box.addView(TextView(this).apply {
+                text = "📅 $dateText"
+                textSize = 11.5f
+                setTextColor(getColor(R.color.pattaya_text_muted))
+                setPadding(0, dp(6), 0, 0)
+            })
+        }
+
+        event.location?.takeIf { it.isNotBlank() }?.let { location ->
+            box.addView(TextView(this).apply {
+                text = "📍 $location"
+                textSize = 11.5f
+                setTextColor(getColor(R.color.pattaya_text_muted))
+                setPadding(0, dp(4), 0, 0)
+            })
+        }
+
+        event.description?.takeIf { it.isNotBlank() }?.let { description ->
+            box.addView(TextView(this).apply {
+                text = description
+                textSize = 11.5f
+                maxLines = 5
+                setTextColor(getColor(R.color.pattaya_text))
+                setPadding(0, dp(8), 0, 0)
+            })
+        }
+
+        event.detailUrl?.takeIf { it.startsWith("http") }?.let { url ->
+            box.addView(MaterialButton(this).apply {
+                text = "ดูรายละเอียดกิจกรรม"
+                isAllCaps = false
+                setOnClickListener { openExternalUrl(url) }
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topMargin = dp(8)
+                }
+            })
+        }
+
+        card.addView(box)
+        return card
     }
 
     @SuppressLint("SetJavaScriptEnabled")
