@@ -29,6 +29,8 @@
     <string name="favorite_added">เพิ่มในกล้องโปรดแล้ว</string>
     <string name="favorite_choose_camera">กรุณาแตะเลือกกล้องจากรายการหรือหมุดบนแผนที่ก่อน แล้วกด ☆ เพื่อบันทึก</string>
     <string name="favorite_removed">นำออกจากกล้องโปรดแล้ว</string>
+    <string name="favorite_opening">กำลังเปิดกล้อง %1$s...</string>
+    <string name="favorite_open_failed">ยังเปิดกล้อง %1$s ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง</string>
     <string name="add_favorite">เพิ่มกล้องนี้เป็นรายการโปรด</string>
     <string name="remove_favorite">นำกล้องนี้ออกจากรายการโปรด</string>
     <string name="search_hint">แตะช่อง Search camera บนหน้าเว็บ แล้วพิมพ์ชื่อหรือรหัสกล้อง</string>
