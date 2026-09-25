@@ -1,66 +1,156 @@
 # Pattaya CCTV Viewer (Android)
 
-แอป Android แบบ Native Wrapper สำหรับเปิดระบบกล้องวงจรปิดเมืองพัทยาจาก:
+แอป Android สำหรับเข้าถึงข้อมูล **CCTV Streaming เมืองพัทยา** ได้สะดวกขึ้น พร้อม Dashboard ข้อมูลเมืองและหน้ากิจกรรมเมืองพัทยา
 
-- https://livestream.pattaya.go.th/
-- โลโก้บนแถบหัวแอปโหลดจาก https://livestream.pattaya.go.th/logo_pattaya.png
+## เวอร์ชันปัจจุบัน
 
-## ฟังก์ชันที่ใส่ให้แล้ว
+- Version: **2.6.0**
+- Version Code: **10**
+- Package: `com.pattayacctv.viewer`
+- minSdk: 24 (Android 7.0+)
+- targetSdk: 35
+- Source CCTV: https://livestream.pattaya.go.th/
+- Events API: https://khunsri.com/public/api/pattaya_events.php
 
-- UI โทนฟ้า/น้ำเงิน ดูทันสมัย
-- แสดงโลโก้เมืองพัทยาบนแถบหัวแอป
-- เปิดระบบ CCTV ภายใน WebView
-- JavaScript / DOM Storage / Cookie รองรับเว็บสตรีมมิง
+## ฟังก์ชันหลัก
+
+### CCTV เมืองพัทยา
+- ดูกล้องสดภายในแอป
+- ค้นหากล้อง
+- แผนที่จุดกล้อง
+- บันทึกกล้องโปรด
+- ดึงชื่อสถานที่ของกล้องจากหน้า CCTV ต้นฉบับ
+- แสดงกล้องดูล่าสุด
+- บันทึก Thumbnail ภาพล่าสุดของกล้องไว้แสดงใน Dashboard
 - รองรับ Video Fullscreen
-- หมุนจอได้โดยไม่รีโหลด Activity
-- ดึงเพื่อ Refresh (Pull to refresh)
-- ปุ่ม Refresh
-- ปุ่มเปิดหน้าเดิมด้วย Browser ภายนอก
-- เมนูล่าง: กล้องสด / คู่มือ / VDO / เกี่ยวกับ
-- หน้า Error และปุ่มลองใหม่เมื่ออินเทอร์เน็ตมีปัญหา
-- เปิดลิงก์ภายนอก pattaya.go.th ด้วย Browser ภายนอก
-- ปิด Cleartext HTTP เพื่อความปลอดภัย
-- Keep Screen On ระหว่างเปิดแอปเพื่อเหมาะกับการดูกล้องต่อเนื่อง
+- Pull to Refresh
+- เปิดหน้าปัจจุบันด้วย Browser ภายนอก
+
+### Dashboard เมืองพัทยา
+- สภาพอากาศพัทยา
+- ราคาน้ำมัน
+- ราคาทอง
+- เมนูตรวจสอบการจราจร
+- เมนูตรวจสอบพื้นที่/น้ำท่วมจากกล้อง
+- Light / Dark / System Theme
+
+### เบอร์สำคัญ
+มีเมนู **เบอร์สำคัญเมืองพัทยา** และแตะเพื่อเปิดแอปโทรศัพท์ได้ทันที เช่น:
+- Pattaya Contact Center 1337
+- ศาลาว่าการเมืองพัทยา
+- ศูนย์ข้อมูล CCTV
+- 191
+- 1669
+- 199
+- 1155
+- 1784
+
+### กิจกรรมเมืองพัทยา
+ดึงข้อมูลจาก:
+`https://khunsri.com/public/api/pattaya_events.php`
+
+รองรับ:
+- รูปปกกิจกรรม
+- ชื่อและรายละเอียดกิจกรรม
+- วันที่เริ่ม / สิ้นสุด
+- สถานที่จัดงาน
+- ปฏิทินรายเดือน
+- กรองตามวันที่
+- กรองตามหมวดหมู่
+- ปุ่มดูรายละเอียด
+- ปุ่มนำทาง Google Maps
+- รองรับ latitude / longitude หรือชื่อสถานที่
+- ปุ่มอัปเดตข้อมูลจาก API
+
+ตัวอ่าน API รองรับชื่อ field ได้หลายรูปแบบ เช่น:
+- `title`, `event_title`, `event_name`
+- `category`, `category_name`
+- `start_date`, `end_date`, `event_date`
+- `location`, `venue`, `address`
+- `image_url`, `cover_image`, `thumbnail`, `banner`
+- `latitude`, `longitude`, `lat`, `lng`
+- `map_url`, `google_maps_url`
 
 ## เปิดโปรเจกต์
 
 1. เปิด Android Studio
-2. เลือก **Open** แล้วเลือกโฟลเดอร์ `PattayaCCTVViewer`
-3. รอ Gradle Sync และติดตั้ง Android SDK 35 ถ้ายังไม่มี
-4. Run บนมือถือ Android หรือ Emulator
+2. เลือก **Open**
+3. เลือกโฟลเดอร์ `PattayaCCTVViewer`
+4. รอ Gradle Sync
+5. ติดตั้ง Android SDK 35 หากยังไม่มี
+6. Run บน Android Device หรือ Emulator
 
-> โปรเจกต์นี้ไม่ได้แนบ Gradle Wrapper JAR เนื่องจากสภาพแวดล้อมที่สร้างไฟล์ไม่มี Android SDK/Gradle ติดตั้งอยู่ Android Studio สามารถตั้งค่า Gradle/สร้าง Wrapper ให้โปรเจกต์ได้จาก IDE
+## Build APK
 
-## Package / Version
+### Android Studio
+ไปที่:
 
-- Package: `com.pattayacctv.viewer`
-- minSdk: 24 (Android 7.0+)
-- targetSdk: 35
-- version: 1.0.0
+**Build > Build Bundle(s) / APK(s) > Build APK(s)**
 
-## หมายเหตุสำหรับเผยแพร่จริง
+ไฟล์จะอยู่ที่:
 
-ตัวแอปเปิดบริการสาธารณะจากเว็บไซต์ของเมืองพัทยาโดยตรงและไม่ได้บันทึกภาพ CCTV เอง หากนำขึ้น Play Store หรือเผยแพร่ในชื่อที่อาจทำให้เข้าใจว่าเป็นแอปทางการ ควรขออนุญาตการใช้ตรา/โลโก้และการนำบริการไปเผยแพร่จากเมืองพัทยาก่อน
+`app/build/outputs/apk/debug/app-debug.apk`
 
-เว็บไซต์ต้นทางมีเงื่อนไขจำกัดการบันทึก คัดลอก ทำซ้ำ ดัดแปลง หรือนำภาพ CCTV ไปเผยแพร่ต่อโดยไม่ได้รับอนุญาต ดังนั้นเวอร์ชันนี้จึงไม่มีปุ่มอัดวิดีโอหรือดาวน์โหลดภาพ
+### GitHub Actions
+Repository มี workflow:
 
+`.github/workflows/build-apk.yml`
 
-## Update v1.1.0
-- ใช้โลโก้เมืองพัทยาแบบฝังในแอป (local asset)
-- เพิ่มรูปนายกเมืองพัทยาในหน้าแรกของแอป
-- เปลี่ยน launcher icon เป็นโลโก้เมืองพัทยา
-- จัดหน้าให้เหมาะกับมือถือและแท็บเล็ต Android
+ทุกครั้งที่ Push เข้า `main` หรือ `master` ระบบจะ Build APK อัตโนมัติ
 
-## Update v2.0.0
-- Splash Screen พร้อมโลโก้เมืองพัทยา
-- Home ใหม่: ดูกล้องสด / ค้นหากล้อง / กล้องโปรด
-- บันทึก URL กล้องปัจจุบันไว้เป็นรายการโปรดได้ด้วยปุ่ม ☆/★
-- รองรับ Dark Mode: ตามระบบ / สว่าง / มืด
-- ปรับเลย์เอาต์แบบ responsive และใช้ ScrollView เพื่อรองรับจอเล็กและแท็บเล็ต Android
+Artifact ปัจจุบัน:
 
-## Update v2.0.0
-- Splash Screen พร้อมโลโก้เมืองพัทยา
-- Home ใหม่: ดูกล้องสด / ค้นหากล้อง / กล้องโปรด
-- บันทึก URL กล้องปัจจุบันไว้เป็นรายการโปรดได้ด้วยปุ่ม ☆/★
-- รองรับ Dark Mode: ตามระบบ / สว่าง / มืด
-- ปรับเลย์เอาต์แบบ responsive และใช้ ScrollView เพื่อรองรับจอเล็กและแท็บเล็ต Android
+`PattayaCCTV-v2.6.0-debug-apk`
+
+หรือสามารถเปิดแท็บ **Actions > Build Pattaya CCTV APK > Run workflow** เพื่อสั่ง Build เองได้
+
+## โครงสร้างสำคัญ
+
+- `MainActivity.kt` — UI หลัก / CCTV / Dashboard / Favorites / Recents / Events
+- `PattayaEventsRepository.kt` — เชื่อม Events API
+- `LiveInfoRepository.kt` — ข้อมูลอากาศ น้ำมัน และทอง
+- `ThemeHelper.kt` — Light / Dark / System Theme
+- `activity_main.xml` — Layout หลัก
+- `.github/workflows/build-apk.yml` — Build APK บน GitHub Actions
+
+## หมายเหตุ
+
+แอปเชื่อมต่อข้อมูล CCTV จากบริการสาธารณะของเมืองพัทยา และไม่ได้เป็นระบบกล้องต้นทางเอง
+
+หากเผยแพร่ในลักษณะที่อาจทำให้ผู้ใช้เข้าใจว่าเป็นแอปทางการ ควรตรวจสอบสิทธิ์การใช้ตรา โลโก้ รูปบุคคล และข้อมูลของหน่วยงานที่เกี่ยวข้องให้เหมาะสม
+
+ไม่ควรเพิ่มฟังก์ชันดาวน์โหลดหรือเผยแพร่ภาพ CCTV ต่อ หากไม่มีสิทธิ์หรือไม่ได้รับอนุญาตจากเจ้าของข้อมูล
+
+## Changelog
+
+### v2.6.0
+- เพิ่มรูปปกกิจกรรม
+- เพิ่มปฏิทินรายเดือน
+- กรองกิจกรรมตามวันที่
+- กรองกิจกรรมตามหมวดหมู่
+- เพิ่ม Google Maps Navigation
+- รองรับพิกัด latitude / longitude
+- ปรับ Events API parser ให้ยืดหยุ่นขึ้น
+
+### v2.5.0
+- เพิ่มหน้ากิจกรรมเมืองพัทยา
+- เชื่อม API `pattaya_events.php`
+
+### v2.4.0
+- เพิ่มชื่อสถานที่ของกล้องโปรด
+- เพิ่มเบอร์สำคัญเมืองพัทยาและแตะเพื่อโทร
+
+### v2.3.0
+- เพิ่ม Thumbnail กล้องดูล่าสุด
+- ปรับ Bottom Navigation ให้รองรับ Android System Navigation
+
+### v2.2.x
+- Dashboard สภาพอากาศ น้ำมัน ทอง
+- เพิ่มเมนูตรวจสอบสถานการณ์
+
+### v2.0.0
+- Splash Screen
+- Home ใหม่
+- ดูกล้องสด / ค้นหา / กล้องโปรด
+- Dark Mode
+- Responsive Layout
