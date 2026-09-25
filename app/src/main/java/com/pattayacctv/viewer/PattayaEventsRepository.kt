@@ -14,10 +14,16 @@ object PattayaEventsRepository {
         val id: String,
         val title: String,
         val category: String?,
+        val startDateText: String?,
+        val endDateText: String?,
         val dateText: String?,
         val location: String?,
         val description: String?,
-        val detailUrl: String?
+        val imageUrl: String?,
+        val detailUrl: String?,
+        val mapUrl: String?,
+        val latitude: String?,
+        val longitude: String?
     )
 
     fun fetchEvents(): List<PattayaEvent> {
@@ -25,14 +31,15 @@ object PattayaEventsRepository {
             requestMethod = "GET"
             connectTimeout = 15_000
             readTimeout = 20_000
+            instanceFollowRedirects = true
             setRequestProperty("Accept", "application/json")
-            setRequestProperty("User-Agent", "PattayaCCTVViewer/2.5 Android")
+            setRequestProperty("User-Agent", "PattayaCCTVViewer/2.6 Android")
         }
 
         return try {
             val code = connection.responseCode
             if (code !in 200..299) {
-                throw IllegalStateException("HTTP $code")
+                throw IllegalStateException("HTTP " + code)
             }
 
             val body = connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
@@ -89,7 +96,7 @@ object PattayaEventsRepository {
         val id = firstString(
             obj,
             listOf("id", "event_id", "uuid", "slug", "code")
-        ) ?: "event-$index"
+        ) ?: "event-" + index
 
         val category = firstString(
             obj,
@@ -103,7 +110,8 @@ object PattayaEventsRepository {
             obj,
             listOf(
                 "start_date", "event_date", "date", "start",
-                "start_at", "event_start", "date_start"
+                "start_at", "event_start", "date_start",
+                "start_datetime", "event_start_date"
             )
         )
 
@@ -111,13 +119,14 @@ object PattayaEventsRepository {
             obj,
             listOf(
                 "end_date", "end", "end_at",
-                "event_end", "date_end"
+                "event_end", "date_end",
+                "end_datetime", "event_end_date"
             )
         )
 
         val dateText = when {
             !startDate.isNullOrBlank() && !endDate.isNullOrBlank() && startDate != endDate ->
-                "$startDate - $endDate"
+                startDate + " - " + endDate
             !startDate.isNullOrBlank() -> startDate
             !endDate.isNullOrBlank() -> endDate
             else -> null
@@ -127,7 +136,7 @@ object PattayaEventsRepository {
             obj,
             listOf(
                 "location", "venue", "place", "event_location",
-                "location_name", "address"
+                "location_name", "address", "venue_name"
             )
         )
 
@@ -139,6 +148,15 @@ object PattayaEventsRepository {
             )
         )?.let(::plainText)
 
+        val imageUrl = firstString(
+            obj,
+            listOf(
+                "image_url", "image", "cover_image", "cover",
+                "thumbnail", "banner", "photo", "event_image",
+                "picture", "featured_image"
+            )
+        )?.let(::absoluteUrl)
+
         val detailUrl = firstString(
             obj,
             listOf(
@@ -147,14 +165,38 @@ object PattayaEventsRepository {
             )
         )?.let(::absoluteUrl)
 
+        val mapUrl = firstString(
+            obj,
+            listOf(
+                "map_url", "map_link", "google_maps_url",
+                "google_map", "maps_url", "location_url"
+            )
+        )?.let(::absoluteUrl)
+
+        val latitude = firstString(
+            obj,
+            listOf("latitude", "lat", "event_lat", "location_lat")
+        )
+
+        val longitude = firstString(
+            obj,
+            listOf("longitude", "lng", "lon", "event_lng", "location_lng")
+        )
+
         return PattayaEvent(
             id = id,
             title = plainText(title),
             category = category?.let(::plainText),
+            startDateText = startDate?.let(::plainText),
+            endDateText = endDate?.let(::plainText),
             dateText = dateText?.let(::plainText),
             location = location?.let(::plainText),
             description = description,
-            detailUrl = detailUrl
+            imageUrl = imageUrl,
+            detailUrl = detailUrl,
+            mapUrl = mapUrl,
+            latitude = latitude,
+            longitude = longitude
         )
     }
 
@@ -167,7 +209,7 @@ object PattayaEventsRepository {
                 is Number, is Boolean -> value.toString()
                 is JSONObject -> firstString(
                     value,
-                    listOf("name", "title", "label", "value", "text")
+                    listOf("url", "src", "path", "name", "title", "label", "value", "text")
                 )
                 else -> null
             }?.trim()
@@ -194,8 +236,9 @@ object PattayaEventsRepository {
         val trimmed = value.trim()
         return when {
             trimmed.startsWith("https://") || trimmed.startsWith("http://") -> trimmed
-            trimmed.startsWith("/") -> "https://khunsri.com$trimmed"
-            else -> "https://khunsri.com/public/$trimmed"
+            trimmed.startsWith("//") -> "https:" + trimmed
+            trimmed.startsWith("/") -> "https://khunsri.com" + trimmed
+            else -> "https://khunsri.com/public/" + trimmed
         }
     }
 }

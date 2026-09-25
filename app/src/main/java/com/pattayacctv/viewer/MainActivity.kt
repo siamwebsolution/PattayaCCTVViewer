@@ -24,6 +24,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.CalendarView
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -36,12 +37,17 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pattayacctv.viewer.databinding.ActivityMainBinding
 import org.json.JSONObject
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -72,6 +78,9 @@ class MainActivity : AppCompatActivity() {
     private val cameraTrackerHandler = Handler(Looper.getMainLooper())
     private var lastTrackedCameraId: String? = null
     private var lastTrackedAt: Long = 0L
+    private var loadedEvents: List<PattayaEventsRepository.PattayaEvent> = emptyList()
+    private var selectedEventCategory: String? = null
+    private var selectedEventDateMillis: Long? = null
     private val cameraTrackerRunnable = object : Runnable {
         override fun run() {
             if (::binding.isInitialized && binding.viewerPanel.visibility == View.VISIBLE) {
@@ -268,6 +277,28 @@ class MainActivity : AppCompatActivity() {
         binding.eventsButton.setOnClickListener { showEvents() }
         binding.eventsBackButton.setOnClickListener { showHome() }
         binding.eventsRefreshButton.setOnClickListener { loadEvents(true) }
+        binding.eventsCalendar.setOnDateChangeListener { _: CalendarView, year: Int, month: Int, dayOfMonth: Int ->
+            val calendar = Calendar.getInstance().apply {
+                set(Calendar.YEAR, year)
+                set(Calendar.MONTH, month)
+                set(Calendar.DAY_OF_MONTH, dayOfMonth)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            selectedEventDateMillis = calendar.timeInMillis
+            binding.eventsDateFilterText.text =
+                "📅 วันที่เลือก: " + SimpleDateFormat("dd/MM/yyyy", Locale("th", "TH")).format(calendar.time)
+            binding.eventsClearDateButton.visibility = View.VISIBLE
+            renderFilteredEvents()
+        }
+        binding.eventsClearDateButton.setOnClickListener {
+            selectedEventDateMillis = null
+            binding.eventsDateFilterText.text = "📅 แสดงทุกวัน • แตะวันที่ในปฏิทินเพื่อกรองกิจกรรม"
+            binding.eventsClearDateButton.visibility = View.GONE
+            renderFilteredEvents()
+        }
 
         binding.situationTraffic.setOnClickListener { openViewer(BASE_URL, true) }
         binding.situationFlood.setOnClickListener { openMapView() }
@@ -420,6 +451,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadEvents(forceRefresh: Boolean) {
+        if (!forceRefresh && loadedEvents.isNotEmpty()) {
+            renderEventCategoryFilters()
+            renderFilteredEvents()
+            return
+        }
+
         binding.eventsProgress.visibility = View.VISIBLE
         binding.eventsEmpty.visibility = View.GONE
         binding.eventsRefreshButton.isEnabled = false
@@ -446,26 +483,149 @@ class MainActivity : AppCompatActivity() {
                     return@runOnUiThread
                 }
 
-                renderEvents(events)
+                loadedEvents = events
+                renderEventCategoryFilters()
+                renderFilteredEvents()
+
                 val time = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("th", "TH")).format(Date())
                 binding.eventsUpdated.text =
-                    "อัปเดตล่าสุด: $time • ข้อมูลจาก khunsri.com"
+                    "อัปเดตล่าสุด: " + time + " • ข้อมูลจาก khunsri.com"
             }
         }.start()
     }
 
-    private fun renderEvents(events: List<PattayaEventsRepository.PattayaEvent>) {
+    private fun renderEventCategoryFilters() {
+        val categories = loadedEvents
+            .mapNotNull { it.category?.trim()?.takeIf(String::isNotBlank) }
+            .distinct()
+            .sorted()
+
+        if (selectedEventCategory != null && categories.none { it == selectedEventCategory }) {
+            selectedEventCategory = null
+        }
+
+        binding.eventsCategoryChips.removeAllViews()
+
+        val allChip = Chip(this).apply {
+            id = View.generateViewId()
+            text = "ทั้งหมด"
+            isCheckable = true
+            isChecked = selectedEventCategory == null
+            setOnClickListener {
+                selectedEventCategory = null
+                renderEventCategoryFilters()
+                renderFilteredEvents()
+            }
+        }
+        binding.eventsCategoryChips.addView(allChip)
+
+        categories.forEach { category ->
+            binding.eventsCategoryChips.addView(Chip(this).apply {
+                id = View.generateViewId()
+                text = category
+                isCheckable = true
+                isChecked = selectedEventCategory == category
+                setOnClickListener {
+                    selectedEventCategory = category
+                    renderEventCategoryFilters()
+                    renderFilteredEvents()
+                }
+            })
+        }
+    }
+
+    private fun renderFilteredEvents() {
+        val filtered = loadedEvents.filter { event ->
+            val categoryOk = selectedEventCategory == null ||
+                event.category.equals(selectedEventCategory, ignoreCase = true)
+
+            val dateOk = selectedEventDateMillis == null ||
+                eventOccursOn(event, selectedEventDateMillis!!)
+
+            categoryOk && dateOk
+        }.sortedWith(
+            compareBy<PattayaEventsRepository.PattayaEvent> {
+                parseEventDate(it.startDateText) ?: Long.MAX_VALUE
+            }.thenBy { it.title }
+        )
+
         binding.eventsList.removeAllViews()
-        binding.eventsEmpty.visibility = if (events.isEmpty()) View.VISIBLE else View.GONE
-        if (events.isEmpty()) {
-            binding.eventsEmpty.text = "ขณะนี้ยังไม่มีกิจกรรมที่แสดงในระบบ"
+        binding.eventsEmpty.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
+
+        binding.eventsFilterSummary.text = buildString {
+            append("พบ ")
+            append(filtered.size)
+            append(" กิจกรรม")
+            selectedEventCategory?.let {
+                append(" • หมวด ")
+                append(it)
+            }
+            selectedEventDateMillis?.let {
+                append(" • ")
+                append(SimpleDateFormat("dd/MM/yyyy", Locale("th", "TH")).format(Date(it)))
+            }
+        }
+
+        if (filtered.isEmpty()) {
+            binding.eventsEmpty.text =
+                if (loadedEvents.isEmpty()) "ขณะนี้ยังไม่มีกิจกรรมที่แสดงในระบบ"
+                else "ไม่พบกิจกรรมตามวันที่หรือหมวดหมู่ที่เลือก"
             return
         }
 
-        events.forEach { event ->
+        filtered.forEach { event ->
             binding.eventsList.addView(createEventCard(event))
         }
     }
+
+    private fun eventOccursOn(
+        event: PattayaEventsRepository.PattayaEvent,
+        selectedDateMillis: Long
+    ): Boolean {
+        val selected = startOfDay(selectedDateMillis)
+        val start = parseEventDate(event.startDateText)
+        val end = parseEventDate(event.endDateText) ?: start
+
+        if (start == null && end == null) return false
+        val rangeStart = start ?: end ?: return false
+        val rangeEnd = end ?: rangeStart
+
+        return selected in minOf(rangeStart, rangeEnd)..maxOf(rangeStart, rangeEnd)
+    }
+
+    private fun parseEventDate(raw: String?): Long? {
+        if (raw.isNullOrBlank()) return null
+        val text = raw.trim()
+
+        val candidates = buildList {
+            Regex("""\d{4}-\d{2}-\d{2}""").find(text)?.value?.let(::add)
+            Regex("""\d{1,2}/\d{1,2}/\d{4}""").find(text)?.value?.let(::add)
+            Regex("""\d{1,2}-\d{1,2}-\d{4}""").find(text)?.value?.let(::add)
+        }
+
+        val patterns = listOf("yyyy-MM-dd", "dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "d-M-yyyy")
+        candidates.forEach { candidate ->
+            patterns.forEach { pattern ->
+                val parsed = runCatching {
+                    SimpleDateFormat(pattern, Locale.US).apply {
+                        isLenient = false
+                    }.parse(candidate)
+                }.getOrNull()
+
+                if (parsed != null) return startOfDay(parsed.time)
+            }
+        }
+        return null
+    }
+
+    private fun startOfDay(timeMillis: Long): Long =
+        Calendar.getInstance().apply {
+            timeInMillis = timeMillis
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
 
     private fun createEventCard(event: PattayaEventsRepository.PattayaEvent): View {
         val card = MaterialCardView(this).apply {
@@ -478,25 +638,45 @@ class MainActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
-                bottomMargin = dp(10)
+                bottomMargin = dp(12)
             }
         }
 
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(15), dp(13), dp(15), dp(13))
+        }
+
+        val cover = ImageView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(180)
+            )
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
+            setPadding(dp(46), dp(28), dp(46), dp(28))
+            setImageResource(R.drawable.logo_pattaya_city)
+            contentDescription = "รูปปกกิจกรรม " + event.title
+        }
+        box.addView(cover)
+
+        event.imageUrl?.takeIf { it.startsWith("http") }?.let { imageUrl ->
+            loadEventImage(cover, imageUrl)
+        }
+
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(15), dp(12), dp(15), dp(14))
         }
 
         event.category?.takeIf { it.isNotBlank() }?.let { category ->
-            box.addView(TextView(this).apply {
-                text = "🏷️ $category"
+            content.addView(TextView(this).apply {
+                text = "🏷️ " + category
                 textSize = 10.5f
                 setTextColor(getColor(R.color.pattaya_blue))
                 setTypeface(typeface, Typeface.BOLD)
             })
         }
 
-        box.addView(TextView(this).apply {
+        content.addView(TextView(this).apply {
             text = event.title
             textSize = 17f
             setTypeface(typeface, Typeface.BOLD)
@@ -505,8 +685,8 @@ class MainActivity : AppCompatActivity() {
         })
 
         event.dateText?.takeIf { it.isNotBlank() }?.let { dateText ->
-            box.addView(TextView(this).apply {
-                text = "📅 $dateText"
+            content.addView(TextView(this).apply {
+                text = "📅 " + dateText
                 textSize = 11.5f
                 setTextColor(getColor(R.color.pattaya_text_muted))
                 setPadding(0, dp(6), 0, 0)
@@ -514,40 +694,159 @@ class MainActivity : AppCompatActivity() {
         }
 
         event.location?.takeIf { it.isNotBlank() }?.let { location ->
-            box.addView(TextView(this).apply {
-                text = "📍 $location"
+            content.addView(TextView(this).apply {
+                text = "📍 " + location
                 textSize = 11.5f
+                maxLines = 3
                 setTextColor(getColor(R.color.pattaya_text_muted))
                 setPadding(0, dp(4), 0, 0)
             })
         }
 
         event.description?.takeIf { it.isNotBlank() }?.let { description ->
-            box.addView(TextView(this).apply {
+            content.addView(TextView(this).apply {
                 text = description
                 textSize = 11.5f
-                maxLines = 5
+                maxLines = 6
                 setTextColor(getColor(R.color.pattaya_text))
                 setPadding(0, dp(8), 0, 0)
             })
         }
 
+        val actions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.START
+        }
+
+        if (!event.location.isNullOrBlank() ||
+            (!event.latitude.isNullOrBlank() && !event.longitude.isNullOrBlank()) ||
+            !event.mapUrl.isNullOrBlank()
+        ) {
+            actions.addView(MaterialButton(this).apply {
+                text = "🗺️ นำทาง"
+                isAllCaps = false
+                setOnClickListener { openEventMap(event) }
+            })
+        }
+
         event.detailUrl?.takeIf { it.startsWith("http") }?.let { url ->
-            box.addView(MaterialButton(this).apply {
-                text = "ดูรายละเอียดกิจกรรม"
+            actions.addView(MaterialButton(
+                this,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle
+            ).apply {
+                text = "รายละเอียด"
                 isAllCaps = false
                 setOnClickListener { openExternalUrl(url) }
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
-                    topMargin = dp(8)
+                    marginStart = dp(8)
                 }
             })
         }
 
+        if (actions.childCount > 0) {
+            content.addView(actions, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(8)
+            })
+        }
+
+        box.addView(content)
         card.addView(box)
         return card
+    }
+
+    private fun loadEventImage(imageView: ImageView, imageUrl: String) {
+        imageView.tag = imageUrl
+        Thread {
+            val bitmap = runCatching {
+                val connection = (URL(imageUrl).openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 12_000
+                    readTimeout = 15_000
+                    instanceFollowRedirects = true
+                    setRequestProperty("User-Agent", "PattayaCCTVViewer/2.6 Android")
+                }
+
+                try {
+                    if (connection.responseCode !in 200..299) return@runCatching null
+                    val bytes = connection.inputStream.use { input ->
+                        val output = ByteArrayOutputStream()
+                        val buffer = ByteArray(16 * 1024)
+                        while (true) {
+                            val count = input.read(buffer)
+                            if (count <= 0) break
+                            output.write(buffer, 0, count)
+                            if (output.size() > 8 * 1024 * 1024) break
+                        }
+                        output.toByteArray()
+                    }
+                    decodeEventImage(bytes)
+                } finally {
+                    connection.disconnect()
+                }
+            }.getOrNull()
+
+            if (bitmap != null) {
+                runOnUiThread {
+                    if (imageView.tag == imageUrl) {
+                        imageView.setPadding(0, 0, 0, 0)
+                        imageView.scaleType = ImageView.ScaleType.CENTER_CROP
+                        imageView.setImageBitmap(bitmap)
+                    }
+                }
+            }
+        }.start()
+    }
+
+    private fun decodeEventImage(bytes: ByteArray): Bitmap? {
+        if (bytes.isEmpty()) return null
+
+        val bounds = android.graphics.BitmapFactory.Options().apply {
+            inJustDecodeBounds = true
+        }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+
+        var sample = 1
+        while (bounds.outWidth / sample > 1400 || bounds.outHeight / sample > 900) {
+            sample *= 2
+        }
+
+        val options = android.graphics.BitmapFactory.Options().apply {
+            inSampleSize = sample.coerceAtLeast(1)
+        }
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+    }
+
+    private fun openEventMap(event: PattayaEventsRepository.PattayaEvent) {
+        val coordinate = if (!event.latitude.isNullOrBlank() && !event.longitude.isNullOrBlank()) {
+            event.latitude + "," + event.longitude
+        } else {
+            null
+        }
+        val query = coordinate ?: event.location?.takeIf { it.isNotBlank() }
+
+        if (query != null) {
+            val navigationUri = Uri.parse("google.navigation:q=" + Uri.encode(query))
+            val googleMapsIntent = Intent(Intent.ACTION_VIEW, navigationUri).apply {
+                setPackage("com.google.android.apps.maps")
+            }
+
+            if (googleMapsIntent.resolveActivity(packageManager) != null) {
+                startActivity(googleMapsIntent)
+                return
+            }
+
+            val webMaps = "https://www.google.com/maps/search/?api=1&query=" + Uri.encode(query)
+            openExternalUrl(webMaps)
+            return
+        }
+
+        event.mapUrl?.takeIf { it.startsWith("http") }?.let(::openExternalUrl)
     }
 
     @SuppressLint("SetJavaScriptEnabled")

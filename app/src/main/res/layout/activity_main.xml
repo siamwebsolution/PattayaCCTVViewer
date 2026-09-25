@@ -800,50 +800,6 @@
                     android:indeterminate="true"
                     android:visibility="gone" />
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:layout_marginTop="14dp"
-                    android:layout_marginEnd="16dp"
-                    android:text="📅 ข่าวสาร ตารางงาน และกิจกรรมที่เกิดขึ้นในเมืองพัทยา"
-                    android:textColor="@color/pattaya_text"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginEnd="16dp"
-                    android:text="ดึงข้อมูลอัตโนมัติจากระบบกิจกรรม khunsri.com"
-                    android:textColor="@color/pattaya_text_muted"
-                    android:textSize="10.5sp" />
-
-                <TextView
-                    android:id="@+id/eventsUpdated"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:layout_marginTop="3dp"
-                    android:layout_marginEnd="16dp"
-                    android:text="กำลังรออัปเดตข้อมูล..."
-                    android:textColor="@color/pattaya_blue"
-                    android:textSize="10sp" />
-
-                <TextView
-                    android:id="@+id/eventsEmpty"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="20dp"
-                    android:gravity="center"
-                    android:padding="20dp"
-                    android:text="กำลังโหลดกิจกรรม..."
-                    android:textColor="@color/pattaya_text_muted"
-                    android:textSize="13sp"
-                    android:visibility="gone" />
-
                 <ScrollView
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
@@ -851,14 +807,159 @@
                     android:clipToPadding="false">
 
                     <LinearLayout
-                        android:id="@+id/eventsList"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:paddingStart="12dp"
-                        android:paddingTop="12dp"
-                        android:paddingEnd="12dp"
-                        android:paddingBottom="22dp" />
+                        android:paddingBottom="22dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:layout_marginTop="14dp"
+                            android:layout_marginEnd="16dp"
+                            android:text="📅 ข่าวสาร ตารางงาน และกิจกรรมเมืองพัทยา"
+                            android:textColor="@color/pattaya_text"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:layout_marginTop="3dp"
+                            android:layout_marginEnd="16dp"
+                            android:text="เลือกวันจากปฏิทิน หรือเลือกหมวดหมู่เพื่อค้นหากิจกรรมได้ทันที"
+                            android:textColor="@color/pattaya_text_muted"
+                            android:textSize="10.5sp" />
+
+                        <TextView
+                            android:id="@+id/eventsUpdated"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginEnd="16dp"
+                            android:text="กำลังรออัปเดตข้อมูล..."
+                            android:textColor="@color/pattaya_blue"
+                            android:textSize="10sp" />
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_marginTop="12dp"
+                            android:layout_marginEnd="12dp"
+                            app:cardBackgroundColor="@color/pattaya_surface"
+                            app:cardCornerRadius="18dp"
+                            app:strokeColor="@color/pattaya_border"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="8dp">
+
+                                <CalendarView
+                                    android:id="@+id/eventsCalendar"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:firstDayOfWeek="2"
+                                    android:showWeekNumber="false" />
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal"
+                                    android:paddingStart="8dp"
+                                    android:paddingEnd="4dp"
+                                    android:paddingBottom="5dp">
+
+                                    <TextView
+                                        android:id="@+id/eventsDateFilterText"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="📅 แสดงทุกวัน • แตะวันที่ในปฏิทินเพื่อกรองกิจกรรม"
+                                        android:textColor="@color/pattaya_text_muted"
+                                        android:textSize="10.5sp" />
+
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/eventsClearDateButton"
+                                        style="@style/Widget.Material3.Button.TextButton"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="40dp"
+                                        android:text="ล้างวันที่"
+                                        android:textAllCaps="false"
+                                        android:visibility="gone" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:layout_marginTop="14dp"
+                            android:layout_marginEnd="16dp"
+                            android:text="กรองตามหมวดหมู่"
+                            android:textColor="@color/pattaya_text"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <HorizontalScrollView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clipToPadding="false"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:scrollbars="none">
+
+                            <com.google.android.material.chip.ChipGroup
+                                android:id="@+id/eventsCategoryChips"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingTop="6dp"
+                                android:paddingBottom="4dp"
+                                app:chipSpacingHorizontal="6dp"
+                                app:singleLine="true"
+                                app:singleSelection="true" />
+                        </HorizontalScrollView>
+
+                        <TextView
+                            android:id="@+id/eventsFilterSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginEnd="16dp"
+                            android:text="กำลังโหลดกิจกรรม..."
+                            android:textColor="@color/pattaya_blue"
+                            android:textSize="10.5sp" />
+
+                        <TextView
+                            android:id="@+id/eventsEmpty"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="20dp"
+                            android:gravity="center"
+                            android:padding="20dp"
+                            android:text="กำลังโหลดกิจกรรม..."
+                            android:textColor="@color/pattaya_text_muted"
+                            android:textSize="13sp"
+                            android:visibility="gone" />
+
+                        <LinearLayout
+                            android:id="@+id/eventsList"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingStart="12dp"
+                            android:paddingTop="8dp"
+                            android:paddingEnd="12dp" />
+                    </LinearLayout>
                 </ScrollView>
             </LinearLayout>
 
