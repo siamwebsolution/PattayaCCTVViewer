@@ -58,7 +58,7 @@
     <string name="live_info_updated">อัปเดตล่าสุด: --</string>
     <string name="weather_source">Open-Meteo • แตะดูพยากรณ์จากกรมอุตุนิยมวิทยา</string>
     <string name="weather_source_short">Open-Meteo • แตะดูกรมอุตุนิยมวิทยา</string>
-    <string name="oil_source">กระทรวงพลังงาน • แตะดูข้อมูลต้นทาง</string>
+    <string name="oil_source">PTT OR • ราคาขายปลีกน้ำมัน • แตะดูข้อมูลต้นทาง</string>
     <string name="gold_source">สมาคมค้าทองคำ • แตะดูข้อมูลต้นทาง</string>
     <string name="live_info_updating">กำลังอัปเดตข้อมูลล่าสุด...</string>
     <string name="live_info_updated_auto">อัปเดตล่าสุด: %1$s • อัตโนมัติทุก 10 นาที</string>
@@ -126,7 +126,7 @@
     <string name="more_history">📄 วิธีขอภาพ CCTV ย้อนหลัง</string>
     <string name="more_theme">🌗 เปลี่ยนธีม</string>
     <string name="more_language">🌐 ภาษา / Language / 中文</string>
-    <string name="more_about_text">Pattaya CCTV v2.7.0\nแอปช่วยให้เข้าถึงข้อมูลกล้อง CCTV เมืองพัทยา กิจกรรม และข้อมูลประกอบการเดินทางได้สะดวกขึ้น</string>
+    <string name="more_about_text">Pattaya CCTV v2.8.0\nแอปช่วยให้เข้าถึงข้อมูลกล้อง CCTV เมืองพัทยา กิจกรรม และข้อมูลประกอบการเดินทางได้สะดวกขึ้น</string>
     <string name="more_history_text">กรณีต้องการภาพย้อนหลังเพื่อใช้ประกอบเหตุการณ์หรืออุบัติเหตุ โปรดติดต่อหน่วยงานเมืองพัทยาเพื่อสอบถามขั้นตอนและเอกสารที่จำเป็นอย่างเป็นทางการ</string>
 
     <string name="language_title">เลือกภาษา</string>
@@ -169,4 +169,14 @@
     <string name="nav_map">แผนที่</string>
     <string name="nav_favorite">โปรด</string>
     <string name="nav_more">เพิ่มเติม</string>
+    <string name="quick_facebook">📘 Facebook • สายตรงพี่เบียร์ พัทยา</string>
+    <string name="ticker_default">📢 อัปเดตเมืองพัทยา • ตรวจสอบการจราจร กล้องสด กิจกรรม และข้อมูลสำคัญก่อนเดินทาง</string>
+    <string name="ticker_weather">🌦️ %1$s</string>
+    <string name="ticker_oil">⛽ %1$s</string>
+    <string name="ticker_gold">🟡 %1$s</string>
+    <string name="ticker_event">📅 กิจกรรม: %1$s %2$s</string>
+    <string name="ticker_cctv">📹 CCTV เมืองพัทยากว่า 600 จุด</string>
+    <string name="ticker_facebook">📘 สายตรงพี่เบียร์ พัทยา</string>
+    <string name="calendar_event_legend">● วันที่มีกิจกรรม</string>
+    <string name="calendar_day_events">วันที่ %1$d มีกิจกรรม %2$d รายการ</string>
 </resources>
