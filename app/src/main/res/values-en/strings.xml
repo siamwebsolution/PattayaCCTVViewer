@@ -58,7 +58,7 @@
     <string name="live_info_updated">Last updated: --</string>
     <string name="weather_source">Open-Meteo • Tap to view weather source</string>
     <string name="weather_source_short">Open-Meteo • Tap to view source</string>
-    <string name="oil_source">Ministry of Energy • Tap to view source</string>
+    <string name="oil_source">PTT OR • Retail fuel prices • Tap to view source</string>
     <string name="gold_source">Gold Traders Association • Tap to view source</string>
     <string name="live_info_updating">Updating latest information...</string>
     <string name="live_info_updated_auto">Last updated: %1$s • Auto every 10 minutes</string>
@@ -126,7 +126,7 @@
     <string name="more_history">📄 How to request CCTV footage</string>
     <string name="more_theme">🌗 Change theme</string>
     <string name="more_language">🌐 Language / ภาษา / 中文</string>
-    <string name="more_about_text">Pattaya CCTV v2.7.0\nEasier access to Pattaya CCTV, city events and useful travel information.</string>
+    <string name="more_about_text">Pattaya CCTV v2.8.0\nEasier access to Pattaya CCTV, city events and useful travel information.</string>
     <string name="more_history_text">If you need historical CCTV footage for an incident or accident, contact Pattaya City for the official procedure and required documents.</string>
 
     <string name="language_title">Select language</string>
@@ -169,4 +169,14 @@
     <string name="nav_map">Map</string>
     <string name="nav_favorite">Favorites</string>
     <string name="nav_more">More</string>
+    <string name="quick_facebook">📘 Facebook • สายตรงพี่เบียร์ พัทยา</string>
+    <string name="ticker_default">📢 Pattaya update • Check traffic, live CCTV, events and useful information before travelling</string>
+    <string name="ticker_weather">🌦️ %1$s</string>
+    <string name="ticker_oil">⛽ %1$s</string>
+    <string name="ticker_gold">🟡 %1$s</string>
+    <string name="ticker_event">📅 Event: %1$s %2$s</string>
+    <string name="ticker_cctv">📹 More than 600 Pattaya CCTV locations</string>
+    <string name="ticker_facebook">📘 สายตรงพี่เบียร์ พัทยา</string>
+    <string name="calendar_event_legend">● Date with events</string>
+    <string name="calendar_day_events">Day %1$d has %2$d events</string>
 </resources>
