@@ -6,6 +6,8 @@ import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -29,6 +31,9 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.pattayacctv.viewer.databinding.ActivityMainBinding
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
@@ -36,6 +41,7 @@ class MainActivity : AppCompatActivity() {
         private const val BASE_URL = "https://livestream.pattaya.go.th/"
         private const val PREFS = "pattaya_cctv_prefs"
         private const val KEY_FAVORITES = "favorite_camera_urls"
+        private const val INFO_REFRESH_MS = 10 * 60 * 1000L
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -43,6 +49,8 @@ class MainActivity : AppCompatActivity() {
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private var pageFailed = false
     private var focusSearchAfterLoad = false
+    private val infoHandler = Handler(Looper.getMainLooper())
+    private val infoRefreshRunnable = Runnable { loadLiveInfo() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeHelper.applySavedTheme(this)
@@ -58,6 +66,8 @@ class MainActivity : AppCompatActivity() {
         setupWebView()
         setupActions()
         setupBackNavigation()
+        setupLiveInfo()
+        loadLiveInfo()
         showHome()
     }
 
@@ -103,7 +113,7 @@ class MainActivity : AppCompatActivity() {
             allowFileAccess = false
             allowContentAccess = false
             mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-            userAgentString = "$userAgentString PattayaCCTVViewer/2.0"
+            userAgentString = "$userAgentString PattayaCCTVViewer/2.1"
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -215,6 +225,10 @@ class MainActivity : AppCompatActivity() {
             binding.webView.loadUrl(binding.webView.url ?: BASE_URL)
         }
         binding.favoriteCurrentButton.setOnClickListener { toggleCurrentFavorite() }
+        binding.refreshInfoButton.setOnClickListener { loadLiveInfo(true) }
+        binding.weatherCard.setOnClickListener { openExternalUrl(LiveInfoRepository.WEATHER_DETAIL_URL) }
+        binding.oilCard.setOnClickListener { openExternalUrl(LiveInfoRepository.OIL_DETAIL_URL) }
+        binding.goldCard.setOnClickListener { openExternalUrl(LiveInfoRepository.GOLD_DETAIL_URL) }
     }
 
     private fun setupBackNavigation() {
@@ -463,6 +477,61 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupLiveInfo() {
+        binding.weatherSource.text = "Open-Meteo • แตะดูพยากรณ์จากกรมอุตุนิยมวิทยา"
+        binding.oilSource.text = "กระทรวงพลังงาน • แตะดูข้อมูลต้นทาง"
+        binding.goldSource.text = "สมาคมค้าทองคำ • แตะดูข้อมูลต้นทาง"
+    }
+
+    private fun loadLiveInfo(showLoading: Boolean = false) {
+        infoHandler.removeCallbacks(infoRefreshRunnable)
+        infoHandler.postDelayed(infoRefreshRunnable, INFO_REFRESH_MS)
+
+        if (showLoading) {
+            binding.weatherValue.setText(R.string.info_loading)
+            binding.oilValue.setText(R.string.info_loading)
+            binding.goldValue.setText(R.string.info_loading)
+        }
+        binding.liveInfoUpdated.text = "กำลังอัปเดตข้อมูลล่าสุด..."
+
+        Thread {
+            val data = runCatching { LiveInfoRepository.fetchWeather() }.getOrNull()
+            runOnUiThread {
+                binding.weatherValue.text = data?.summary ?: getString(R.string.info_unavailable)
+                updateInfoTimestamp()
+            }
+        }.start()
+
+        Thread {
+            val data = runCatching { LiveInfoRepository.fetchOil() }.getOrNull()
+            runOnUiThread {
+                binding.oilValue.text = data?.summary ?: getString(R.string.info_unavailable)
+                updateInfoTimestamp()
+            }
+        }.start()
+
+        Thread {
+            val data = runCatching { LiveInfoRepository.fetchGold() }.getOrNull()
+            runOnUiThread {
+                binding.goldValue.text = data?.summary ?: getString(R.string.info_unavailable)
+                updateInfoTimestamp()
+            }
+        }.start()
+    }
+
+    private fun updateInfoTimestamp() {
+        val time = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("th", "TH")).format(Date())
+        binding.liveInfoUpdated.text = "อัปเดตล่าสุด: $time • อัตโนมัติทุก 10 นาที"
+    }
+
+    private fun openExternalUrl(url: String) {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (_: Exception) {
+            Toast.makeText(this, R.string.load_error_message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun hideCustomView() {
         val view = customView ?: return
         binding.fullscreenContainer.removeView(view)
@@ -495,6 +564,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        infoHandler.removeCallbacks(infoRefreshRunnable)
         binding.webView.apply {
             stopLoading()
             webChromeClient = null
