@@ -49,6 +49,7 @@ class MainActivity : AppCompatActivity() {
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private var pageFailed = false
     private var focusSearchAfterLoad = false
+    private var pendingFavoriteCameraId: String? = null
     private val infoHandler = Handler(Looper.getMainLooper())
     private val infoRefreshRunnable = Runnable { loadLiveInfo() }
 
@@ -113,7 +114,7 @@ class MainActivity : AppCompatActivity() {
             allowFileAccess = false
             allowContentAccess = false
             mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-            userAgentString = "$userAgentString PattayaCCTVViewer/2.1"
+            userAgentString = "$userAgentString PattayaCCTVViewer/2.1.1"
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -147,6 +148,9 @@ class MainActivity : AppCompatActivity() {
                     updateFavoriteButton(decodeJavascriptString(jsValue) ?: url)
                 }
                 injectFavoriteTracker()
+                if (pendingFavoriteCameraId != null) {
+                    openPendingFavoriteCamera()
+                }
                 if (focusSearchAfterLoad) {
                     focusSearchAfterLoad = false
                     focusCameraSearch()
@@ -258,6 +262,143 @@ class MainActivity : AppCompatActivity() {
         }
         if (focusSearch && binding.webView.url == url) {
             binding.webView.reload()
+        }
+    }
+
+    private fun openFavoriteCamera(cameraId: String) {
+        val normalized = normalizeCameraId(cameraId)
+        if (normalized == null) {
+            Toast.makeText(this, R.string.favorite_open_failed, Toast.LENGTH_LONG).show()
+            return
+        }
+
+        pendingFavoriteCameraId = normalized
+        binding.homePanel.visibility = View.GONE
+        binding.favoritesPanel.visibility = View.GONE
+        binding.viewerPanel.visibility = View.VISIBLE
+        focusSearchAfterLoad = false
+
+        Toast.makeText(
+            this,
+            getString(R.string.favorite_opening, normalized),
+            Toast.LENGTH_SHORT
+        ).show()
+
+        // Always start from the CCTV home page, then use the site's own search/list UI.
+        // Direct liff.state URLs are not consistently honored outside LIFF, which is
+        // why saved favorites previously opened the page but not the selected camera.
+        binding.webView.loadUrl(BASE_URL)
+    }
+
+    private fun openPendingFavoriteCamera() {
+        val cameraId = pendingFavoriteCameraId ?: return
+        val jsCameraId = JSONObject.quote(cameraId)
+
+        binding.webView.evaluateJavascript(
+            """
+            (function(target){
+              var attempts = 0;
+
+              function setNativeValue(input, value) {
+                var proto = Object.getPrototypeOf(input);
+                var desc = proto && Object.getOwnPropertyDescriptor(proto, 'value');
+                if (desc && desc.set) desc.set.call(input, value);
+                else input.value = value;
+                input.dispatchEvent(new Event('input', {bubbles:true}));
+                input.dispatchEvent(new Event('change', {bubbles:true}));
+                input.dispatchEvent(new KeyboardEvent('keyup', {bubbles:true, key:'Enter'}));
+              }
+
+              function exactMatch(text) {
+                if (!text) return false;
+                var cleaned = String(text).replace(/\s+/g,' ').trim().toUpperCase();
+                return cleaned === target ||
+                       cleaned.indexOf(target + ' ') === 0 ||
+                       cleaned.indexOf(' ' + target + ' ') >= 0 ||
+                       cleaned.endsWith(' ' + target);
+              }
+
+              function clickCamera() {
+                attempts++;
+
+                var input = document.querySelector(
+                  'input[placeholder*="Search camera"], input[type="search"], input[placeholder*="camera" i]'
+                );
+                if (input) {
+                  setNativeValue(input, target);
+                  input.focus();
+                }
+
+                var candidates = Array.from(document.querySelectorAll(
+                  'button, a, [role="button"], li, tr, .card, [class*="camera"], [class*="list"]'
+                )).filter(function(el){
+                  var text = (el.innerText || el.textContent || '').trim();
+                  return text && text.length < 700 && exactMatch(text);
+                });
+
+                // Prefer the smallest matching element because large containers can
+                // contain several camera IDs at once.
+                candidates.sort(function(a,b){
+                  var ta = (a.innerText || a.textContent || '').length;
+                  var tb = (b.innerText || b.textContent || '').length;
+                  return ta - tb;
+                });
+
+                if (candidates.length) {
+                  var el = candidates[0];
+                  var clickable = el.closest('button, a, [role="button"], li, tr') || el;
+                  try {
+                    clickable.scrollIntoView({behavior:'smooth', block:'center'});
+                    clickable.click();
+                    window.__pattayaLastCameraId = target;
+                    return true;
+                  } catch(e) {}
+                }
+
+                // Fallback: scan text nodes/containers after search filtering.
+                var all = Array.from(document.querySelectorAll('div, span, p, td'));
+                for (var i=0; i<all.length; i++) {
+                  var text = (all[i].innerText || all[i].textContent || '').trim();
+                  if (text && text.length < 250 && exactMatch(text)) {
+                    var p = all[i].closest('button, a, [role="button"], li, tr, [class*="camera"]') || all[i];
+                    try {
+                      p.scrollIntoView({behavior:'smooth', block:'center'});
+                      p.click();
+                      window.__pattayaLastCameraId = target;
+                      return true;
+                    } catch(e) {}
+                  }
+                }
+
+                return false;
+              }
+
+              return new Promise(function(resolve){
+                var timer = setInterval(function(){
+                  if (clickCamera()) {
+                    clearInterval(timer);
+                    setTimeout(function(){ resolve('opened'); }, 900);
+                  } else if (attempts >= 24) {
+                    clearInterval(timer);
+                    resolve('not-found');
+                  }
+                }, 500);
+              });
+            })($jsCameraId);
+            """.trimIndent()
+        ) { result ->
+            val status = decodeJavascriptString(result)
+            if (status == "opened") {
+                pendingFavoriteCameraId = null
+                updateFavoriteButton(cameraUrl(cameraId))
+            } else if (status == "not-found") {
+                pendingFavoriteCameraId = null
+                Toast.makeText(
+                    this,
+                    getString(R.string.favorite_open_failed, cameraId),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
     }
 
@@ -514,13 +655,17 @@ class MainActivity : AppCompatActivity() {
                 setTextColor(getColor(R.color.pattaya_text))
                 maxLines = 2
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                setOnClickListener { openViewer(url, false) }
+                setOnClickListener {
+                    extractCameraId(url)?.let { openFavoriteCamera(it) }
+                }
             }
 
             val open = MaterialButton(this).apply {
                 text = getString(R.string.open)
                 isAllCaps = false
-                setOnClickListener { openViewer(url, false) }
+                setOnClickListener {
+                    extractCameraId(url)?.let { openFavoriteCamera(it) }
+                }
             }
 
             val remove = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
