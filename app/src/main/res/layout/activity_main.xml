@@ -310,6 +310,42 @@
                         </LinearLayout>
                     </HorizontalScrollView>
 
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginEnd="12dp"
+                        app:cardBackgroundColor="@color/pattaya_surface"
+                        app:cardCornerRadius="14dp"
+                        app:strokeColor="@color/pattaya_border"
+                        app:strokeWidth="1dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="46dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp">
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="📢" android:textSize="17sp" />
+                            <TextView
+                                android:id="@+id/dashboardTicker"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:layout_weight="1"
+                                android:ellipsize="marquee"
+                                android:focusable="true"
+                                android:focusableInTouchMode="true"
+                                android:marqueeRepeatLimit="marquee_forever"
+                                android:scrollHorizontally="true"
+                                android:singleLine="true"
+                                android:text="@string/ticker_default"
+                                android:textColor="@color/pattaya_text"
+                                android:textSize="11.5sp" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -433,6 +469,17 @@
                             android:layout_height="58dp"
                             android:layout_marginTop="8dp"
                             android:text="@string/quick_events"
+                            android:textAllCaps="false"
+                            android:textSize="12sp"
+                            app:cornerRadius="17dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/facebookButton"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="58dp"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/quick_facebook"
                             android:textAllCaps="false"
                             android:textSize="12sp"
                             app:cornerRadius="17dp" />
@@ -861,12 +908,51 @@
                                 android:orientation="vertical"
                                 android:padding="8dp">
 
-                                <CalendarView
-                                    android:id="@+id/eventsCalendar"
+                                <LinearLayout
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:firstDayOfWeek="2"
-                                    android:showWeekNumber="false" />
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal">
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/eventsPrevMonthButton"
+                                        style="@style/Widget.Material3.Button.TextButton"
+                                        android:layout_width="48dp"
+                                        android:layout_height="44dp"
+                                        android:minWidth="0dp"
+                                        android:text="‹"
+                                        android:textSize="24sp" />
+                                    <TextView
+                                        android:id="@+id/eventsCalendarMonthLabel"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:gravity="center"
+                                        android:textColor="@color/pattaya_text"
+                                        android:textSize="16sp"
+                                        android:textStyle="bold" />
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/eventsNextMonthButton"
+                                        style="@style/Widget.Material3.Button.TextButton"
+                                        android:layout_width="48dp"
+                                        android:layout_height="44dp"
+                                        android:minWidth="0dp"
+                                        android:text="›"
+                                        android:textSize="24sp" />
+                                </LinearLayout>
+                                <GridLayout
+                                    android:id="@+id/eventsCalendarGrid"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:columnCount="7"
+                                    android:padding="2dp" />
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center"
+                                    android:paddingBottom="4dp"
+                                    android:text="@string/calendar_event_legend"
+                                    android:textColor="@color/pattaya_blue"
+                                    android:textSize="10sp" />
 
                                 <LinearLayout
                                     android:layout_width="match_parent"
