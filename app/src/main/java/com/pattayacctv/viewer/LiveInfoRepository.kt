@@ -13,7 +13,7 @@ data class WeatherInfo(
 
 data class OilInfo(
     val summary: String,
-    val source: String = "กระทรวงพลังงาน • ราคาขายปลีกน้ำมัน"
+    val source: String = "PTT OR • ราคาขายปลีกน้ำมัน"
 )
 
 data class GoldInfo(
@@ -23,7 +23,7 @@ data class GoldInfo(
 
 object LiveInfoRepository {
     const val WEATHER_DETAIL_URL = "https://www.tmd.go.th/weather/province/pattaya"
-    const val OIL_DETAIL_URL = "https://new2.energy.go.th/th/home"
+    const val OIL_DETAIL_URL = "https://orapiweb.pttor.com/oilservice/OilPrice.asmx?op=CurrentOilPrice"
     const val GOLD_DETAIL_URL = "https://www.goldtraders.or.th/"
 
     private const val WEATHER_API =
@@ -77,43 +77,86 @@ object LiveInfoRepository {
     }
 
     fun fetchOil(): OilInfo {
-        val doc = Jsoup.connect(OIL_DETAIL_URL)
-            .userAgent("Mozilla/5.0 (Android) PattayaCCTVViewer/2.1")
-            .timeout(18000)
-            .get()
+        return runCatching { fetchOilFromPttOrService() }
+            .getOrElse { fetchOilFromEnergyPage() }
+    }
 
-        fun rowPrice(vararg aliases: String): String? {
-            for (row in doc.select("tr")) {
-                val rowText = row.text().replace("\u00A0", " ").trim()
-                if (aliases.none { rowText.contains(it, ignoreCase = true) }) continue
+    private fun fetchOilFromPttOrService(): OilInfo {
+        val soapUrl = "https://orapiweb.pttor.com/oilservice/OilPrice.asmx"
+        val payload = """<?xml version="1.0" encoding="utf-8"?>
+            <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+              <soap:Body>
+                <CurrentOilPrice xmlns="http://www.pttor.com">
+                  <Language>EN</Language>
+                </CurrentOilPrice>
+              </soap:Body>
+            </soap:Envelope>""".trimIndent()
+        val connection = (URL(soapUrl).openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"
+            doOutput = true
+            connectTimeout = 15000
+            readTimeout = 18000
+            setRequestProperty("Content-Type", "text/xml; charset=utf-8")
+            setRequestProperty("SOAPAction", "\"https://orapiweb.pttor.com/CurrentOilPrice\"")
+            setRequestProperty("User-Agent", "PattayaCCTVViewer/2.8 Android")
+        }
+        val response = try {
+            connection.outputStream.use { it.write(payload.toByteArray(Charsets.UTF_8)) }
+            val code = connection.responseCode
+            val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+            val body = stream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            if (code !in 200..299) throw IllegalStateException("PTT OR HTTP " + code)
+            body
+        } finally { connection.disconnect() }
 
-                val cells = row.select("th,td").map { it.text().trim() }
-                for (cell in cells.drop(1)) {
-                    val match = Regex("""\b\d{1,3}(?:\.\d{1,2})\b""").find(cell)
-                    if (match != null) return match.value
-                }
+        val decoded = response.replace("&lt;", "<").replace("&gt;", ">")
+            .replace("&quot;", "\"").replace("&#39;", "'").replace("&amp;", "&")
+        val rows = Regex("""(?is)<DataAccess\b[^>]*>(.*?)</DataAccess>""")
+            .findAll(decoded).mapNotNull { match ->
+                val block = match.groupValues[1]
+                val product = Regex("""(?is)<PRODUCT\b[^>]*>\s*(.*?)\s*</PRODUCT>""")
+                    .find(block)?.groupValues?.getOrNull(1)?.replace(Regex("<[^>]+>"), "")?.trim()
+                val price = Regex("""(?is)<PRICE\b[^>]*>\s*([0-9.]+)\s*</PRICE>""")
+                    .find(block)?.groupValues?.getOrNull(1)
+                if (product.isNullOrBlank() || price.isNullOrBlank()) null else product to price
+            }.toList()
+        fun priceOf(vararg aliases: String): String? =
+            rows.firstOrNull { (product, _) -> aliases.any { product.contains(it, ignoreCase = true) } }?.second
+
+        val gasohol95 = priceOf("Blue Gasohol 95", "Gasohol 95")
+        val e20 = priceOf("Blue Gasohol E20", "Gasohol E20", "E20")
+        val diesel = priceOf("Blue Diesel B7", "Diesel B7", "Blue Diesel", "Diesel")
+        if (gasohol95 == null && e20 == null && diesel == null) throw IllegalStateException("PTT OR oil data not found")
+
+        val summary = buildString {
+            if (gasohol95 != null) append("PTT Gasohol 95  ฿" + gasohol95 + "/ลิตร")
+            if (e20 != null) { if (isNotEmpty()) append("\n"); append("PTT E20  ฿" + e20 + "/ลิตร") }
+            if (diesel != null) { if (isNotEmpty()) append("\n"); append("PTT Diesel  ฿" + diesel + "/ลิตร") }
+        }
+        return OilInfo(summary, "PTT OR • CurrentOilPrice Web Service")
+    }
+
+    private fun fetchOilFromEnergyPage(): OilInfo {
+        val text = Jsoup.connect("https://new2.energy.go.th/th/home")
+            .userAgent("Mozilla/5.0 (Android) PattayaCCTVViewer/2.8")
+            .timeout(18000).get().text().replace("\u00A0", " ")
+        fun findPrice(vararg labels: String): String? {
+            labels.forEach { label ->
+                Regex(Regex.escape(label) + """[^0-9]{0,40}([0-9]{2,3}(?:\.[0-9]{1,2})?)""", RegexOption.IGNORE_CASE)
+                    .find(text)?.groupValues?.getOrNull(1)?.let { return it }
             }
             return null
         }
-
-        val gasohol95 = rowPrice("Gasohol 95", "แก๊สโซฮอลล์ 95", "แก็สโซฮอลล์ 95")
-        val e20 = rowPrice("Gasohol E20", "E20", "อี 20")
-        val diesel = rowPrice("Diesel B7", "ดีเซล B7", "ดีเซล บี7")
-
-        if (gasohol95 == null && e20 == null && diesel == null) {
-            throw IllegalStateException("Oil price table not found")
-        }
-
+        val gasohol95 = findPrice("Gasohol 95", "แก๊สโซฮอล์ 95", "แก๊สโซฮอลล์ 95")
+        val e20 = findPrice("E20", "Gasohol E20")
+        val diesel = findPrice("Diesel B7", "ดีเซล B7", "ดีเซล")
+        if (gasohol95 == null && e20 == null && diesel == null) throw IllegalStateException("Oil price data not found")
         val summary = buildString {
-            if (gasohol95 != null) append("PTT Gasohol 95  ฿$gasohol95/ลิตร")
-            if (e20 != null) {
-                if (isNotEmpty()) append("\n")
-                append("PTT E20  ฿$e20/ลิตร")
-            }
-            if (diesel != null) {
-                if (isNotEmpty()) append("\n")
-                append("PTT Diesel B7  ฿$diesel/ลิตร")
-            }
+            if (gasohol95 != null) append("Gasohol 95  ฿" + gasohol95 + "/ลิตร")
+            if (e20 != null) { if (isNotEmpty()) append("\n"); append("E20  ฿" + e20 + "/ลิตร") }
+            if (diesel != null) { if (isNotEmpty()) append("\n"); append("Diesel  ฿" + diesel + "/ลิตร") }
         }
         return OilInfo(summary)
     }
