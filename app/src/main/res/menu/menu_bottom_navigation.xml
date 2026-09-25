@@ -1,0 +1,7 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/nav_home" android:icon="@drawable/ic_nav_home" android:title="@string/nav_home" />
+    <item android:id="@+id/nav_live" android:icon="@drawable/ic_nav_camera" android:title="@string/nav_live" />
+    <item android:id="@+id/nav_map" android:icon="@drawable/ic_nav_map" android:title="@string/nav_map" />
+    <item android:id="@+id/nav_favorite" android:icon="@drawable/ic_nav_favorite" android:title="@string/nav_favorite" />
+    <item android:id="@+id/nav_more" android:icon="@drawable/ic_nav_more" android:title="@string/nav_more" />
+</menu>
