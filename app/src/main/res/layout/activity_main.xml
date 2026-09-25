@@ -993,9 +993,14 @@
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottomNavigation"
             android:layout_width="match_parent"
-            android:layout_height="72dp"
+            android:layout_height="wrap_content"
+            android:minHeight="88dp"
             android:background="@color/pattaya_surface"
-            app:itemIconSize="23dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="8dp"
+            app:itemIconSize="22dp"
+            app:itemPaddingTop="5dp"
+            app:itemPaddingBottom="5dp"
             app:itemTextColor="@color/pattaya_text"
             app:labelVisibilityMode="labeled"
             app:menu="@menu/menu_bottom_navigation" />
