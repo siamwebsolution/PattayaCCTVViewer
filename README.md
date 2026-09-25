@@ -4,8 +4,8 @@
 
 ## เวอร์ชันปัจจุบัน
 
-- Version: **2.6.0**
-- Version Code: **10**
+- Version: **2.7.0**
+- Version Code: **11**
 - Package: `com.pattayacctv.viewer`
 - minSdk: 24 (Android 7.0+)
 - targetSdk: 35
@@ -100,7 +100,7 @@ Repository มี workflow:
 
 Artifact ปัจจุบัน:
 
-`PattayaCCTV-v2.6.0-debug-apk`
+`PattayaCCTV-v2.7.0-debug-apk`
 
 หรือสามารถเปิดแท็บ **Actions > Build Pattaya CCTV APK > Run workflow** เพื่อสั่ง Build เองได้
 
@@ -121,7 +121,25 @@ Artifact ปัจจุบัน:
 
 ไม่ควรเพิ่มฟังก์ชันดาวน์โหลดหรือเผยแพร่ภาพ CCTV ต่อ หากไม่มีสิทธิ์หรือไม่ได้รับอนุญาตจากเจ้าของข้อมูล
 
+## Languages
+
+รองรับ 3 ภาษาในแอป:
+- 🇹🇭 ไทย
+- 🇬🇧 English
+- 🇨🇳 中文（简体）
+
+เปลี่ยนภาษาได้จาก **เพิ่มเติม > ภาษา / Language / 中文** และแอปจะจำภาษาที่เลือกไว้ในเครื่อง
+
+หาก Events API มีฟิลด์ภาษา เช่น `title_en`, `title_zh`, `description_en`, `description_zh` แอปจะเลือกใช้ตามภาษาที่ตั้งไว้ และ fallback ไปข้อมูลหลักเมื่อไม่มีคำแปล
+
 ## Changelog
+
+### v2.7.0
+- เพิ่มภาษาไทย อังกฤษ และจีนตัวย่อ
+- เพิ่มเมนูเลือกภาษาและบันทึกภาษาที่เลือก
+- แปล Dashboard, CCTV, กิจกรรม, เบอร์สำคัญ และเมนูหลัก
+- Events API รองรับฟิลด์แยกภาษาแบบ fallback อัตโนมัติ
+
 
 ### v2.6.0
 - เพิ่มรูปปกกิจกรรม

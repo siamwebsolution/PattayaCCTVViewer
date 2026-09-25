@@ -1,9 +1,9 @@
-# Build APK - Pattaya CCTV v2.6.0
+# Build APK - Pattaya CCTV v2.7.0
 
 ## ข้อมูลเวอร์ชัน
 
 - Version Name: **2.6.0**
-- Version Code: **10**
+- Version Code: **11**
 - Package: `com.pattayacctv.viewer`
 - minSdk: 24
 - targetSdk: 35
@@ -33,7 +33,7 @@ Workflow จะทำงานอัตโนมัติเมื่อ Push �
 
 Artifact ปัจจุบัน:
 
-`PattayaCCTV-v2.6.0-debug-apk`
+`PattayaCCTV-v2.7.0-debug-apk`
 
 ภายใน ZIP จะมี:
 
