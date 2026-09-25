@@ -24,7 +24,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.CalendarView
+import android.widget.GridLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -59,6 +59,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val BASE_URL = "https://livestream.pattaya.go.th/"
+        private const val FACEBOOK_BEER_URL = "https://www.facebook.com/profile.php?id=61577642321996"
         private const val PREFS = "pattaya_cctv_prefs"
         private const val KEY_FAVORITES = "favorite_camera_urls"
         private const val KEY_RECENTS = "recent_camera_ids"
@@ -85,6 +86,13 @@ class MainActivity : AppCompatActivity() {
     private var loadedEvents: List<PattayaEventsRepository.PattayaEvent> = emptyList()
     private var selectedEventCategory: String? = null
     private var selectedEventDateMillis: Long? = null
+    private val eventCalendarMonth: Calendar = Calendar.getInstance().apply {
+        set(Calendar.DAY_OF_MONTH, 1)
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
     private val cameraTrackerRunnable = object : Runnable {
         override fun run() {
             if (::binding.isInitialized && binding.viewerPanel.visibility == View.VISIBLE) {
@@ -115,7 +123,10 @@ class MainActivity : AppCompatActivity() {
         renderDashboardFavorites()
         renderDashboardRecents()
         loadCachedInfo()
+        binding.dashboardTicker.isSelected = true
+        updateDashboardTicker()
         loadLiveInfo()
+        loadEvents(false)
         showHome()
     }
 
@@ -278,29 +289,23 @@ class MainActivity : AppCompatActivity() {
         binding.mapButton.setOnClickListener { openMapView() }
         binding.alertsButton.setOnClickListener { showAlertsInfo() }
         binding.contactsButton.setOnClickListener { showImportantContacts() }
+        binding.facebookButton.setOnClickListener { openExternalUrl(FACEBOOK_BEER_URL) }
         binding.eventsButton.setOnClickListener { showEvents() }
         binding.eventsBackButton.setOnClickListener { showHome() }
         binding.eventsRefreshButton.setOnClickListener { loadEvents(true) }
-        binding.eventsCalendar.setOnDateChangeListener { _: CalendarView, year: Int, month: Int, dayOfMonth: Int ->
-            val calendar = Calendar.getInstance().apply {
-                set(Calendar.YEAR, year)
-                set(Calendar.MONTH, month)
-                set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-            selectedEventDateMillis = calendar.timeInMillis
-            binding.eventsDateFilterText.text =
-                getString(R.string.events_selected_date, SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(calendar.time))
-            binding.eventsClearDateButton.visibility = View.VISIBLE
-            renderFilteredEvents()
+        binding.eventsPrevMonthButton.setOnClickListener {
+            eventCalendarMonth.add(Calendar.MONTH, -1)
+            renderEventCalendar()
+        }
+        binding.eventsNextMonthButton.setOnClickListener {
+            eventCalendarMonth.add(Calendar.MONTH, 1)
+            renderEventCalendar()
         }
         binding.eventsClearDateButton.setOnClickListener {
             selectedEventDateMillis = null
             binding.eventsDateFilterText.text = getString(R.string.events_all_dates_hint)
             binding.eventsClearDateButton.visibility = View.GONE
+            renderEventCalendar()
             renderFilteredEvents()
         }
 
@@ -458,7 +463,9 @@ class MainActivity : AppCompatActivity() {
     private fun loadEvents(forceRefresh: Boolean) {
         if (!forceRefresh && loadedEvents.isNotEmpty()) {
             renderEventCategoryFilters()
+            renderEventCalendar()
             renderFilteredEvents()
+            updateDashboardTicker()
             return
         }
 
@@ -490,7 +497,9 @@ class MainActivity : AppCompatActivity() {
 
                 loadedEvents = events
                 renderEventCategoryFilters()
+                renderEventCalendar()
                 renderFilteredEvents()
+                updateDashboardTicker()
 
                 val time = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("th", "TH")).format(Date())
                 binding.eventsUpdated.text =
@@ -498,6 +507,90 @@ class MainActivity : AppCompatActivity() {
             }
         }.start()
     }
+
+    private fun renderEventCalendar() {
+        val month = eventCalendarMonth.clone() as Calendar
+        month.set(Calendar.DAY_OF_MONTH, 1)
+        binding.eventsCalendarMonthLabel.text =
+            SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(month.time)
+
+        val grid = binding.eventsCalendarGrid
+        grid.removeAllViews()
+
+        val monday = Calendar.getInstance().apply {
+            set(2024, Calendar.JANUARY, 1, 0, 0, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        repeat(7) { offset ->
+            val day = monday.clone() as Calendar
+            day.add(Calendar.DAY_OF_MONTH, offset)
+            grid.addView(TextView(this).apply {
+                text = SimpleDateFormat("EEE", Locale.getDefault()).format(day.time)
+                gravity = Gravity.CENTER
+                textSize = 10f
+                setTypeface(typeface, Typeface.BOLD)
+                setTextColor(getColor(R.color.pattaya_text_muted))
+            }, calendarCellParams(dp(28)))
+        }
+
+        val firstDayOffset = (month.get(Calendar.DAY_OF_WEEK) - Calendar.MONDAY + 7) % 7
+        repeat(firstDayOffset) { grid.addView(View(this), calendarCellParams(dp(52))) }
+
+        val maxDay = month.getActualMaximum(Calendar.DAY_OF_MONTH)
+        for (dayNumber in 1..maxDay) {
+            val dayCalendar = month.clone() as Calendar
+            dayCalendar.set(Calendar.DAY_OF_MONTH, dayNumber)
+            val dayMillis = startOfDay(dayCalendar.timeInMillis)
+            val matchingEvents = loadedEvents.count { event ->
+                val categoryOk = selectedEventCategory == null ||
+                    event.category.equals(selectedEventCategory, ignoreCase = true)
+                categoryOk && eventOccursOn(event, dayMillis)
+            }
+            val selected = selectedEventDateMillis?.let { startOfDay(it) == dayMillis } == true
+            val today = startOfDay(System.currentTimeMillis()) == dayMillis
+
+            val card = MaterialCardView(this).apply {
+                radius = dp(12).toFloat()
+                cardElevation = 0f
+                strokeWidth = if (today || matchingEvents > 0 || selected) dp(1) else 0
+                setStrokeColor(getColor(if (selected) R.color.pattaya_blue_dark else if (matchingEvents > 0) R.color.pattaya_blue else R.color.pattaya_border))
+                setCardBackgroundColor(getColor(when {
+                    selected -> R.color.pattaya_blue
+                    matchingEvents > 0 -> R.color.pattaya_sky
+                    else -> R.color.pattaya_surface
+                }))
+                isClickable = true
+                isFocusable = true
+                setOnClickListener {
+                    selectedEventDateMillis = dayMillis
+                    binding.eventsDateFilterText.text = getString(
+                        R.string.events_selected_date,
+                        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(dayCalendar.time)
+                    )
+                    binding.eventsClearDateButton.visibility = View.VISIBLE
+                    renderEventCalendar()
+                    renderFilteredEvents()
+                }
+            }
+            card.addView(TextView(this).apply {
+                text = dayNumber.toString() + if (matchingEvents > 0) "\n●" else ""
+                gravity = Gravity.CENTER
+                textSize = 13f
+                setTypeface(typeface, if (matchingEvents > 0 || selected) Typeface.BOLD else Typeface.NORMAL)
+                setTextColor(getColor(if (selected) R.color.white else if (matchingEvents > 0) R.color.pattaya_blue_dark else R.color.pattaya_text))
+                contentDescription = if (matchingEvents > 0) getString(R.string.calendar_day_events, dayNumber, matchingEvents) else dayNumber.toString()
+            })
+            grid.addView(card, calendarCellParams(dp(52)))
+        }
+    }
+
+    private fun calendarCellParams(height: Int): GridLayout.LayoutParams =
+        GridLayout.LayoutParams().apply {
+            width = 0
+            this.height = height
+            columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+            setMargins(dp(2), dp(2), dp(2), dp(2))
+        }
 
     private fun renderEventCategoryFilters() {
         val categories = loadedEvents
@@ -519,6 +612,7 @@ class MainActivity : AppCompatActivity() {
             setOnClickListener {
                 selectedEventCategory = null
                 renderEventCategoryFilters()
+                renderEventCalendar()
                 renderFilteredEvents()
             }
         }
@@ -533,6 +627,7 @@ class MainActivity : AppCompatActivity() {
                 setOnClickListener {
                     selectedEventCategory = category
                     renderEventCategoryFilters()
+                    renderEventCalendar()
                     renderFilteredEvents()
                 }
             })
@@ -601,26 +696,39 @@ class MainActivity : AppCompatActivity() {
     private fun parseEventDate(raw: String?): Long? {
         if (raw.isNullOrBlank()) return null
         val text = raw.trim()
-
         val candidates = buildList {
             Regex("""\d{4}-\d{2}-\d{2}""").find(text)?.value?.let(::add)
             Regex("""\d{1,2}/\d{1,2}/\d{4}""").find(text)?.value?.let(::add)
             Regex("""\d{1,2}-\d{1,2}-\d{4}""").find(text)?.value?.let(::add)
         }
-
-        val patterns = listOf("yyyy-MM-dd", "dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "d-M-yyyy")
-        candidates.forEach { candidate ->
-            patterns.forEach { pattern ->
-                val parsed = runCatching {
-                    SimpleDateFormat(pattern, Locale.US).apply {
-                        isLenient = false
-                    }.parse(candidate)
-                }.getOrNull()
-
-                if (parsed != null) return startOfDay(parsed.time)
+        candidates.forEach { original ->
+            val normalized = normalizeEventDateYear(original)
+            val pattern = when {
+                Regex("""\d{4}-\d{2}-\d{2}""").matches(normalized) -> "yyyy-MM-dd"
+                normalized.contains("/") -> "d/M/yyyy"
+                else -> "d-M-yyyy"
             }
+            val parsed = runCatching {
+                SimpleDateFormat(pattern, Locale.US).apply { isLenient = false }.parse(normalized)
+            }.getOrNull()
+            if (parsed != null) return startOfDay(parsed.time)
         }
         return null
+    }
+
+    private fun normalizeEventDateYear(value: String): String {
+        return if (Regex("""\d{4}-\d{2}-\d{2}""").matches(value)) {
+            val parts = value.split("-").toMutableList()
+            val year = parts[0].toIntOrNull() ?: return value
+            if (year >= 2400) parts[0] = (year - 543).toString()
+            parts.joinToString("-")
+        } else {
+            val separator = if (value.contains("/")) "/" else "-"
+            val parts = value.split(separator).toMutableList()
+            val year = parts.getOrNull(2)?.toIntOrNull() ?: return value
+            if (year >= 2400) parts[2] = (year - 543).toString()
+            parts.joinToString(separator)
+        }
     }
 
     private fun startOfDay(timeMillis: Long): Long =
@@ -1667,6 +1775,27 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun updateDashboardTicker() {
+        val items = mutableListOf<String>()
+        getCached(KEY_WEATHER_CACHE)?.lineSequence()?.firstOrNull()?.takeIf { it.isNotBlank() }?.let { items.add(getString(R.string.ticker_weather, it)) }
+        getCached(KEY_OIL_CACHE)?.lineSequence()?.firstOrNull()?.takeIf { it.isNotBlank() }?.let { items.add(getString(R.string.ticker_oil, it)) }
+        getCached(KEY_GOLD_CACHE)?.lineSequence()?.firstOrNull()?.takeIf { it.isNotBlank() }?.let { items.add(getString(R.string.ticker_gold, it)) }
+        val today = startOfDay(System.currentTimeMillis())
+        val nextEvent = loadedEvents.filter { event ->
+            val end = parseEventDate(event.endDateText) ?: parseEventDate(event.startDateText)
+            end != null && end >= today
+        }.minByOrNull { event ->
+            parseEventDate(event.startDateText) ?: parseEventDate(event.endDateText) ?: Long.MAX_VALUE
+        }
+        nextEvent?.let { event ->
+            items.add(getString(R.string.ticker_event, event.title, event.dateText?.takeIf { it.isNotBlank() }.orEmpty()))
+        }
+        items.add(getString(R.string.ticker_cctv))
+        items.add(getString(R.string.ticker_facebook))
+        binding.dashboardTicker.text = if (items.isEmpty()) getString(R.string.ticker_default) else items.joinToString("     •     ")
+        binding.dashboardTicker.isSelected = true
+    }
+
     private fun setupLiveInfo() {
         binding.weatherSource.setText(R.string.weather_source)
         binding.oilSource.setText(R.string.oil_source)
@@ -1687,6 +1816,7 @@ class MainActivity : AppCompatActivity() {
             binding.goldValue.text = it
             updateGoldSummary(it)
         }
+        updateDashboardTicker()
     }
 
     private fun loadLiveInfo(showLoading: Boolean = false) {
@@ -1709,6 +1839,7 @@ class MainActivity : AppCompatActivity() {
                     binding.weatherValue.text = data.summary
                     cache(KEY_WEATHER_CACHE, data.summary)
                     updateWeatherSummary(data.summary)
+                    updateDashboardTicker()
                 } else if (getCached(KEY_WEATHER_CACHE) == null) {
                     binding.weatherValue.setText(R.string.info_unavailable)
                 }
@@ -1724,6 +1855,7 @@ class MainActivity : AppCompatActivity() {
                     binding.oilValue.text = data.summary
                     cache(KEY_OIL_CACHE, data.summary)
                     updateOilSummary(data.summary)
+                    updateDashboardTicker()
                 } else if (getCached(KEY_OIL_CACHE) == null) {
                     binding.oilValue.setText(R.string.info_unavailable)
                 }
@@ -1739,6 +1871,7 @@ class MainActivity : AppCompatActivity() {
                     binding.goldValue.text = data.summary
                     cache(KEY_GOLD_CACHE, data.summary)
                     updateGoldSummary(data.summary)
+                    updateDashboardTicker()
                 } else if (getCached(KEY_GOLD_CACHE) == null) {
                     binding.goldValue.setText(R.string.info_unavailable)
                 }
@@ -1753,7 +1886,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateOilSummary(summary: String) {
-        val value = Regex("""Gasohol 95\s+฿([0-9.]+)""", RegexOption.IGNORE_CASE)
+        val value = Regex("""(?:Gasohol|แก๊สโซฮอล์|แก๊สโซฮอลล์)\s*95[^0-9]*฿?\s*([0-9.]+)""", RegexOption.IGNORE_CASE)
             .find(summary)?.groupValues?.getOrNull(1)
         binding.oilSummaryValue.text = value ?: "--.--"
     }
