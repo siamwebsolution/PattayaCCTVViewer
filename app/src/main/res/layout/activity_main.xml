@@ -340,7 +340,7 @@
                                 android:layout_height="76dp"
                                 android:layout_marginEnd="5dp"
                                 android:layout_weight="1"
-                                android:text="📹&#10;@string/home_live"
+                                android:text="📹&#10;ดูกล้องสด"
                                 android:textAllCaps="false"
                                 android:textSize="12sp"
                                 app:cornerRadius="17dp" />
@@ -353,7 +353,7 @@
                                 android:layout_marginStart="5dp"
                                 android:layout_marginEnd="5dp"
                                 android:layout_weight="1"
-                                android:text="🔎&#10;@string/home_search"
+                                android:text="🔎&#10;ค้นหากล้อง"
                                 android:textAllCaps="false"
                                 android:textSize="12sp"
                                 app:cornerRadius="17dp" />
@@ -365,7 +365,7 @@
                                 android:layout_height="76dp"
                                 android:layout_marginStart="5dp"
                                 android:layout_weight="1"
-                                android:text="❤️&#10;@string/home_favorites"
+                                android:text="❤️&#10;กล้องโปรด"
                                 android:textAllCaps="false"
                                 android:textSize="12sp"
                                 app:cornerRadius="17dp" />
@@ -384,7 +384,7 @@
                                 android:layout_height="76dp"
                                 android:layout_marginEnd="5dp"
                                 android:layout_weight="1"
-                                android:text="🕘&#10;@string/home_recent"
+                                android:text="🕘&#10;ดูล่าสุด"
                                 android:textAllCaps="false"
                                 android:textSize="12sp"
                                 app:cornerRadius="17dp" />
@@ -397,7 +397,7 @@
                                 android:layout_marginStart="5dp"
                                 android:layout_marginEnd="5dp"
                                 android:layout_weight="1"
-                                android:text="📍&#10;@string/home_map"
+                                android:text="📍&#10;แผนที่กล้อง"
                                 android:textAllCaps="false"
                                 android:textSize="12sp"
                                 app:cornerRadius="17dp" />
@@ -409,7 +409,7 @@
                                 android:layout_height="76dp"
                                 android:layout_marginStart="5dp"
                                 android:layout_weight="1"
-                                android:text="🔔&#10;@string/home_alerts"
+                                android:text="🔔&#10;แจ้งเตือน"
                                 android:textAllCaps="false"
                                 android:textSize="12sp"
                                 app:cornerRadius="17dp" />
@@ -995,7 +995,6 @@
             android:layout_width="match_parent"
             android:layout_height="72dp"
             android:background="@color/pattaya_surface"
-            app:itemActiveIndicatorStyle="@style/Widget.Material3.BottomNavigationView.ActiveIndicator"
             app:itemIconSize="23dp"
             app:itemTextColor="@color/pattaya_text"
             app:labelVisibilityMode="labeled"
