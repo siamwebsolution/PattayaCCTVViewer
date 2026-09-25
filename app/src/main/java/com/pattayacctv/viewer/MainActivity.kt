@@ -146,6 +146,7 @@ class MainActivity : AppCompatActivity() {
                 view?.evaluateJavascript("(function(){return window.location.href;})();") { jsValue ->
                     updateFavoriteButton(decodeJavascriptString(jsValue) ?: url)
                 }
+                injectFavoriteTracker()
                 if (focusSearchAfterLoad) {
                     focusSearchAfterLoad = false
                     focusCameraSearch()
@@ -298,6 +299,62 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, getString(R.string.search_hint), Toast.LENGTH_LONG).show()
     }
 
+    private fun injectFavoriteTracker() {
+        binding.webView.evaluateJavascript(
+            """
+            (function(){
+              if(window.__pattayaFavoriteTrackerInstalled) return 'ready';
+              window.__pattayaFavoriteTrackerInstalled = true;
+              window.__pattayaLastCameraId = null;
+
+              function findId(text){
+                if(!text) return null;
+                var m = String(text).match(/\b(?:CC|NC|SC|RC)-\d+\b|\bCAM\s*-?\s*\d+\b/i);
+                if(!m) return null;
+                return m[0].replace(/\s+/g,'').replace(/^CAM(\d+)$/i,'CAM-$1').toUpperCase();
+              }
+
+              function remember(text){
+                if(!text || text.length > 500) return;
+                var id = findId(text);
+                if(id) window.__pattayaLastCameraId = id;
+              }
+
+              document.addEventListener('click', function(ev){
+                var node = ev.target;
+                for(var i=0; node && i<8; i++, node=node.parentElement){
+                  var text = (node.innerText || node.textContent || '').trim();
+                  if(text && text.length <= 500 && findId(text)){
+                    remember(text);
+                    break;
+                  }
+                }
+
+                setTimeout(function(){
+                  var nodes = document.querySelectorAll('[aria-selected="true"],[class*="selected"],[class*="active"],[class*="popup"],[class*="modal"]');
+                  for(var j=0; j<nodes.length; j++){
+                    var t = (nodes[j].innerText || nodes[j].textContent || '').trim();
+                    if(t && t.length <= 500 && findId(t)) remember(t);
+                  }
+                }, 350);
+              }, true);
+
+              var initial = findId(decodeURIComponent(window.location.href || ''));
+              if(initial) window.__pattayaLastCameraId = initial;
+              return 'ready';
+            })();
+            """.trimIndent(),
+            null
+        )
+    }
+
+    private fun normalizeCameraId(value: String?): String? {
+        if (value.isNullOrBlank()) return null
+        var id = value.trim().uppercase(Locale.US)
+        id = id.replace(Regex("""^CAM\s*-?\s*(\d+)$"""), "CAM-$1")
+        return if (Regex("""^(?:(?:CC|NC|SC|RC)-\d+|CAM-\d+)$""").matches(id)) id else null
+    }
+
     private fun favorites(): MutableSet<String> =
         getSharedPreferences(PREFS, MODE_PRIVATE).getStringSet(KEY_FAVORITES, emptySet())?.toMutableSet()
             ?: mutableSetOf()
@@ -307,22 +364,52 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun toggleCurrentFavorite() {
-        // The Pattaya site keeps the selected camera in liff.state, for example:
-        // https://livestream.pattaya.go.th/?liff.state=%2Flive-cctv%2FCC-012
-        // Some versions of the site change this URL with JavaScript, so read location.href
-        // from inside WebView instead of relying only on WebView.url.
-        binding.webView.evaluateJavascript("(function(){return window.location.href;})();") { jsValue ->
-            val liveUrl = decodeJavascriptString(jsValue) ?: binding.webView.url
-            val cameraId = extractCameraId(liveUrl)
-            if (cameraId == null) {
-                Toast.makeText(this, R.string.favorite_choose_camera, Toast.LENGTH_SHORT).show()
+        binding.webView.evaluateJavascript(
+            """
+            (function(){
+              function normalise(value){
+                if(!value) return null;
+                var m = String(value).match(/\b(?:CC|NC|SC|RC)-\d+\b|\bCAM\s*-?\s*\d+\b/i);
+                if(!m) return null;
+                return m[0].replace(/\s+/g,'').replace(/^CAM(\d+)$/i,'CAM-$1').toUpperCase();
+              }
+              var fromUrl = normalise(decodeURIComponent(window.location.href || ''));
+              if(fromUrl) return fromUrl;
+              if(window.__pattayaLastCameraId) return normalise(window.__pattayaLastCameraId);
+
+              var selectors = [
+                '[aria-selected="true"]',
+                '[class*="selected"]',
+                '[class*="active"]',
+                '[class*="popup"]',
+                '[class*="modal"]'
+              ];
+              for(var s=0; s<selectors.length; s++){
+                var nodes = document.querySelectorAll(selectors[s]);
+                for(var i=0; i<nodes.length; i++){
+                  var text = (nodes[i].innerText || nodes[i].textContent || '').trim();
+                  if(text && text.length < 500){
+                    var id = normalise(text);
+                    if(id) return id;
+                  }
+                }
+              }
+              return null;
+            })();
+            """.trimIndent()
+        ) { jsValue ->
+            val selectedId = normalizeCameraId(decodeJavascriptString(jsValue))
+                ?: extractCameraId(binding.webView.url)
+
+            if (selectedId.isNullOrBlank()) {
+                Toast.makeText(this, R.string.favorite_choose_camera, Toast.LENGTH_LONG).show()
                 return@evaluateJavascript
             }
 
-            val canonicalUrl = cameraUrl(cameraId)
+            val canonicalUrl = cameraUrl(selectedId)
             val set = favorites()
-            val added = if (set.any { extractCameraId(it).equals(cameraId, ignoreCase = true) }) {
-                set.removeAll { extractCameraId(it).equals(cameraId, ignoreCase = true) }
+            val added = if (set.any { extractCameraId(it).equals(selectedId, ignoreCase = true) }) {
+                set.removeAll { extractCameraId(it).equals(selectedId, ignoreCase = true) }
                 false
             } else {
                 set.add(canonicalUrl)
@@ -366,7 +453,7 @@ class MainActivity : AppCompatActivity() {
             ?.groupValues
             ?.getOrNull(1)
             ?.takeIf { it.isNotBlank() }
-            ?.let { return it }
+            ?.let { return normalizeCameraId(it) }
 
         return runCatching {
             val uri = Uri.parse(rawUrl)
@@ -376,6 +463,7 @@ class MainActivity : AppCompatActivity() {
                     .find(Uri.decode(it))
                     ?.groupValues
                     ?.getOrNull(1)
+                    ?.let { normalizeCameraId(it) }
             }
         }.getOrNull()
     }
