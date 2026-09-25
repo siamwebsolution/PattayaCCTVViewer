@@ -1,27 +1,53 @@
 <resources>
     <string name="app_name">Pattaya CCTV</string>
-    <string name="brand_title">PATTAYA CCTV</string>
-    <string name="brand_subtitle">กล้องวงจรปิดเมืองพัทยา</string>
+    <string name="brand_title">Pattaya CCTV</string>
+    <string name="brand_subtitle">รายงานจราจรและข้อมูลเมืองพัทยาแบบเรียลไทม์</string>
     <string name="splash_title">PATTAYA CCTV</string>
     <string name="splash_subtitle">ระบบเปิดดูกล้องวงจรปิดเมืองพัทยา</string>
-    <string name="hero_badge">PATTAYA CITY • LIVE CCTV</string>
-    <string name="hero_title">เมืองพัทยา สดทุกมุมมอง</string>
-    <string name="hero_message">เปิดดูกล้องสด ค้นหากล้อง และบันทึกกล้องที่ดูบ่อยไว้ในรายการโปรด</string>
-    <string name="home_choose">เลือกเมนูที่ต้องการ</string>
-    <string name="home_live">📹  ดูกล้องสด</string>
-    <string name="home_search">🔎  ค้นหากล้อง</string>
-    <string name="home_favorites">★  กล้องโปรด</string>
-    <string name="home_source">เชื่อมต่อข้อมูล CCTV จาก livestream.pattaya.go.th</string>
-    <string name="live_info_title">ข้อมูลสดสำหรับเมืองพัทยา</string>
-    <string name="live_info_subtitle">อัปเดตอัตโนมัติจากแหล่งข้อมูลที่เชื่อถือได้ • แตะการ์ดเพื่อดูต้นทาง</string>
+
+    <string name="hero_badge">PATTAYA SMART CITY</string>
+    <string name="hero_title">ยินดีต้อนรับสู่ระบบกล้องเมืองพัทยา</string>
+    <string name="hero_message">ดูกล้องจราจร ตรวจสอบสภาพพื้นที่ และข้อมูลสำคัญก่อนออกเดินทาง</string>
+
+    <string name="summary_weather">อากาศวันนี้</string>
+    <string name="summary_cctv">CCTV เมืองพัทยา</string>
+    <string name="summary_oil">ราคาน้ำมัน</string>
+    <string name="summary_gold">ราคาทอง</string>
+    <string name="summary_cctv_value">600+ จุด</string>
+
+    <string name="quick_menu_title">เมนูด่วน</string>
+    <string name="home_live">ดูกล้องสด</string>
+    <string name="home_search">ค้นหากล้อง</string>
+    <string name="home_favorites">กล้องโปรด</string>
+    <string name="home_recent">ดูล่าสุด</string>
+    <string name="home_map">แผนที่กล้อง</string>
+    <string name="home_alerts">แจ้งเตือน</string>
+
+    <string name="situation_title">สถานการณ์วันนี้</string>
+    <string name="situation_traffic">🚗 ตรวจสอบการจราจร</string>
+    <string name="situation_traffic_sub">เปิดกล้องจุดสำคัญก่อนออกเดินทาง</string>
+    <string name="situation_flood">💧 ตรวจสอบฝน / น้ำขัง</string>
+    <string name="situation_flood_sub">ดูภาพพื้นที่และสภาพถนนจากกล้องสด</string>
+    <string name="situation_travel">🛣️ ก่อนออกเดินทาง</string>
+    <string name="situation_travel_sub">ตรวจสอบเส้นทางหลักในเมืองพัทยา</string>
+
+    <string name="dashboard_favorites_title">กล้องโปรดของคุณ</string>
+    <string name="dashboard_recents_title">กล้องดูล่าสุด</string>
+    <string name="dashboard_empty_favorites">ยังไม่มีกล้องโปรด</string>
+    <string name="dashboard_empty_recents">ยังไม่มีประวัติกล้องล่าสุด</string>
+    <string name="see_all">ดูทั้งหมด ›</string>
+
+    <string name="home_source">ข้อมูล CCTV จาก livestream.pattaya.go.th</string>
+    <string name="live_info_title">ข้อมูลสด</string>
+    <string name="live_info_subtitle">อัปเดตอัตโนมัติจากแหล่งข้อมูลที่เชื่อถือได้</string>
     <string name="weather_title">🌦️ พยากรณ์อากาศพัทยา</string>
     <string name="oil_title">⛽ ราคาน้ำมัน</string>
     <string name="gold_title">🟡 ราคาทองคำ</string>
     <string name="info_loading">กำลังดึงข้อมูลล่าสุด...</string>
-    <string name="info_unavailable">ดึงข้อมูลอัตโนมัติไม่สำเร็จ • แตะเพื่อดูข้อมูลจากแหล่งต้นทาง</string>
-    <string name="refresh_info">↻ อัปเดตข้อมูล</string>
+    <string name="info_unavailable">ยังไม่สามารถอัปเดตข้อมูลใหม่ได้ • แตะดูข้อมูลจากแหล่งต้นทาง</string>
+    <string name="refresh_info">↻ อัปเดต</string>
     <string name="live_info_updated">อัปเดตล่าสุด: --</string>
-    <string name="favorite_detected">เลือกกล้องแล้ว: %1$s</string>
+
     <string name="viewer_title">CCTV Streaming เมืองพัทยา</string>
     <string name="back_home">‹ หน้าแรก</string>
     <string name="favorites_title">กล้องโปรด</string>
@@ -33,7 +59,8 @@
     <string name="favorite_open_failed">ยังเปิดกล้อง %1$s ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง</string>
     <string name="add_favorite">เพิ่มกล้องนี้เป็นรายการโปรด</string>
     <string name="remove_favorite">นำกล้องนี้ออกจากรายการโปรด</string>
-    <string name="search_hint">แตะช่อง Search camera บนหน้าเว็บ แล้วพิมพ์ชื่อหรือรหัสกล้อง</string>
+
+    <string name="search_hint">กำลังเปิดช่องค้นหากล้อง กรุณาพิมพ์ชื่อหรือรหัสกล้อง</string>
     <string name="theme_system">ธีม: ระบบ</string>
     <string name="theme_light">ธีม: สว่าง</string>
     <string name="theme_dark">ธีม: มืด</string>
@@ -44,5 +71,19 @@
     <string name="load_error_message">กรุณาตรวจสอบอินเทอร์เน็ต แล้วลองใหม่อีกครั้ง</string>
     <string name="retry">ลองใหม่</string>
     <string name="city_logo">โลโก้เมืองพัทยา</string>
-    <string name="mayor_photo">รูปนายกเมืองพัทยา</string>
+    <string name="mayor_photo">ภาพประกอบหน้าแอป</string>
+
+    <string name="more_title">เพิ่มเติม</string>
+    <string name="more_about">ℹ️ เกี่ยวกับแอป Pattaya CCTV</string>
+    <string name="more_source">📹 เปิดเว็บไซต์ CCTV ต้นทาง</string>
+    <string name="more_history">📄 วิธีขอภาพ CCTV ย้อนหลัง</string>
+    <string name="more_theme">🌗 เปลี่ยนธีม</string>
+    <string name="more_about_text">Pattaya CCTV v2.2.0\nแอปช่วยให้เข้าถึงข้อมูลกล้อง CCTV เมืองพัทยาและข้อมูลประกอบการเดินทางได้สะดวกขึ้น</string>
+    <string name="more_history_text">กรณีต้องการภาพย้อนหลังเพื่อใช้ประกอบเหตุการณ์หรืออุบัติเหตุ โปรดติดต่อหน่วยงานเมืองพัทยาเพื่อสอบถามขั้นตอนและเอกสารที่จำเป็นอย่างเป็นทางการ</string>
+
+    <string name="nav_home">หน้าแรก</string>
+    <string name="nav_live">กล้องสด</string>
+    <string name="nav_map">แผนที่</string>
+    <string name="nav_favorite">โปรด</string>
+    <string name="nav_more">เพิ่มเติม</string>
 </resources>
