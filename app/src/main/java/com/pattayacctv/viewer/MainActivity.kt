@@ -230,8 +230,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupActions() {
-        binding.liveButton.setOnClickListener { openViewer(BASE_URL, false) }
-        binding.searchButton.setOnClickListener { openViewer(BASE_URL, true) }
+        binding.liveButton.setOnClickListener {
+            binding.bottomNavigation.menu.findItem(R.id.nav_live).isChecked = true
+            openViewer(BASE_URL, false)
+        }
+        binding.searchButton.setOnClickListener {
+            binding.bottomNavigation.menu.findItem(R.id.nav_live).isChecked = true
+            openViewer(BASE_URL, true)
+        }
         binding.favoritesButton.setOnClickListener { showFavorites() }
         binding.recentButton.setOnClickListener { showRecentDialog() }
         binding.mapButton.setOnClickListener { openMapView() }
@@ -332,10 +338,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openMapView() {
-        if (binding.bottomNavigation.selectedItemId != R.id.nav_map) {
-            binding.bottomNavigation.selectedItemId = R.id.nav_map
-            return
-        }
+        binding.bottomNavigation.menu.findItem(R.id.nav_map).isChecked = true
         openViewer(BASE_URL, false)
         Toast.makeText(this, "แตะหมุดกล้องบนแผนที่เพื่อดูภาพสด", Toast.LENGTH_LONG).show()
     }
@@ -350,9 +353,7 @@ class MainActivity : AppCompatActivity() {
         renderDashboardRecents()
         updateThemeButtonText()
 
-        if (binding.bottomNavigation.selectedItemId != R.id.nav_home) {
-            binding.bottomNavigation.selectedItemId = R.id.nav_home
-        }
+        binding.bottomNavigation.menu.findItem(R.id.nav_home).isChecked = true
     }
 
     private fun showFavorites() {
@@ -362,9 +363,7 @@ class MainActivity : AppCompatActivity() {
         binding.morePanel.visibility = View.GONE
         binding.favoritesPanel.visibility = View.VISIBLE
 
-        if (binding.bottomNavigation.selectedItemId != R.id.nav_favorite) {
-            binding.bottomNavigation.selectedItemId = R.id.nav_favorite
-        }
+        binding.bottomNavigation.menu.findItem(R.id.nav_favorite).isChecked = true
     }
 
     private fun showMore() {
@@ -373,9 +372,7 @@ class MainActivity : AppCompatActivity() {
         binding.favoritesPanel.visibility = View.GONE
         binding.morePanel.visibility = View.VISIBLE
 
-        if (binding.bottomNavigation.selectedItemId != R.id.nav_more) {
-            binding.bottomNavigation.selectedItemId = R.id.nav_more
-        }
+        binding.bottomNavigation.menu.findItem(R.id.nav_more).isChecked = true
     }
 
     @SuppressLint("SetJavaScriptEnabled")
