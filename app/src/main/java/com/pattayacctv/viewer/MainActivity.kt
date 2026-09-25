@@ -542,7 +542,7 @@ class MainActivity : AppCompatActivity() {
     private fun extractCameraId(rawUrl: String?): String? {
         if (rawUrl.isNullOrBlank()) return null
 
-        var decoded = rawUrl
+        var decoded: String = rawUrl
         repeat(3) {
             val next = Uri.decode(decoded)
             if (next != decoded) decoded = next
