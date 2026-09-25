@@ -2,6 +2,10 @@ package com.pattayacctv.viewer
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Rect
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
@@ -9,6 +13,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
+import android.view.PixelCopy
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -19,6 +24,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -33,6 +39,8 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pattayacctv.viewer.databinding.ActivityMainBinding
 import org.json.JSONObject
+import java.io.File
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -60,6 +68,17 @@ class MainActivity : AppCompatActivity() {
     private var pendingFavoriteCameraId: String? = null
     private val infoHandler = Handler(Looper.getMainLooper())
     private val infoRefreshRunnable = Runnable { loadLiveInfo() }
+    private val cameraTrackerHandler = Handler(Looper.getMainLooper())
+    private var lastTrackedCameraId: String? = null
+    private var lastTrackedAt: Long = 0L
+    private val cameraTrackerRunnable = object : Runnable {
+        override fun run() {
+            if (::binding.isInitialized && binding.viewerPanel.visibility == View.VISIBLE) {
+                detectCurrentCameraForRecent()
+            }
+            cameraTrackerHandler.postDelayed(this, 1800L)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeHelper.applySavedTheme(this)
@@ -68,8 +87,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        setupSystemBars()
+        WindowCompat.setDecorFitsSystemWindows(window, true)
 
         setupBranding()
         setupThemeButton()
@@ -78,29 +96,13 @@ class MainActivity : AppCompatActivity() {
         setupBottomNavigation()
         setupBackNavigation()
         setupLiveInfo()
+        cameraTrackerHandler.post(cameraTrackerRunnable)
 
         renderDashboardFavorites()
         renderDashboardRecents()
         loadCachedInfo()
         loadLiveInfo()
         showHome()
-    }
-
-    private fun setupSystemBars() {
-        ViewCompat.setOnApplyWindowInsetsListener(binding.mainShell) { view, insets ->
-            val systemBars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or
-                    WindowInsetsCompat.Type.displayCutout()
-            )
-            view.setPadding(
-                systemBars.left,
-                systemBars.top,
-                systemBars.right,
-                systemBars.bottom
-            )
-            insets
-        }
-        ViewCompat.requestApplyInsets(binding.mainShell)
     }
 
     private fun setupBranding() {
@@ -174,12 +176,12 @@ class MainActivity : AppCompatActivity() {
                 binding.viewerTitle.text =
                     view?.title?.takeIf { it.isNotBlank() } ?: getString(R.string.viewer_title)
 
-                extractCameraId(url)?.let { recordRecent(it) }
+                extractCameraId(url)?.let { trackRecentCamera(it) }
                 updateFavoriteButton(url)
 
                 view?.evaluateJavascript("(function(){return window.location.href;})();") { jsValue ->
                     val actualUrl = decodeJavascriptString(jsValue) ?: url
-                    extractCameraId(actualUrl)?.let { recordRecent(it) }
+                    extractCameraId(actualUrl)?.let { trackRecentCamera(it) }
                     updateFavoriteButton(actualUrl)
                 }
 
@@ -348,6 +350,8 @@ class MainActivity : AppCompatActivity() {
         binding.morePanel.visibility = View.GONE
         binding.viewerPanel.visibility = View.VISIBLE
         focusSearchAfterLoad = focusSearch
+        lastTrackedCameraId = null
+        lastTrackedAt = 0L
 
         if (binding.webView.url == url) {
             binding.webView.reload()
@@ -464,6 +468,138 @@ class MainActivity : AppCompatActivity() {
             """.trimIndent(),
             null
         )
+    }
+
+    private fun detectCurrentCameraForRecent() {
+        binding.webView.evaluateJavascript(
+            """
+            (function(){
+              function normalise(value){
+                if(!value) return null;
+                var m = String(value).match(/\b(?:CC|NC|SC|RC)-\d+\b|\bCAM\s*-?\s*\d+\b/i);
+                if(!m) return null;
+                return m[0].replace(/\s+/g,'').replace(/^CAM(\d+)$/i,'CAM-$1').toUpperCase();
+              }
+
+              var fromUrl = normalise(decodeURIComponent(window.location.href || ''));
+              if(fromUrl) return fromUrl;
+              if(window.__pattayaLastCameraId) return normalise(window.__pattayaLastCameraId);
+
+              var nodes = document.querySelectorAll('[aria-selected="true"],[class*="selected"],[class*="active"],[class*="popup"],[class*="modal"]');
+              for(var i=0; i<nodes.length; i++){
+                var text = (nodes[i].innerText || nodes[i].textContent || '').trim();
+                if(text && text.length < 500){
+                  var id = normalise(text);
+                  if(id) return id;
+                }
+              }
+              return null;
+            })();
+            """.trimIndent()
+        ) { jsValue ->
+            val cameraId = normalizeCameraId(decodeJavascriptString(jsValue)) ?: return@evaluateJavascript
+            trackRecentCamera(cameraId)
+        }
+    }
+
+    private fun trackRecentCamera(cameraId: String) {
+        val id = normalizeCameraId(cameraId) ?: return
+        val now = System.currentTimeMillis()
+        if (id.equals(lastTrackedCameraId, ignoreCase = true) && now - lastTrackedAt < 30_000L) return
+
+        lastTrackedCameraId = id
+        lastTrackedAt = now
+        recordRecent(id)
+        captureRecentThumbnail(id)
+        renderDashboardRecents()
+    }
+
+    private fun thumbnailFile(cameraId: String): File {
+        val dir = File(filesDir, "camera_thumbnails").apply { mkdirs() }
+        val safeId = cameraId.replace(Regex("""[^A-Za-z0-9_-]"""), "_")
+        return File(dir, "$safeId.jpg")
+    }
+
+    private fun captureRecentThumbnail(cameraId: String) {
+        val id = normalizeCameraId(cameraId) ?: return
+        val webView = binding.webView
+        if (!webView.isShown || webView.width <= 0 || webView.height <= 0) return
+
+        webView.postDelayed({
+            if (!webView.isShown || webView.width <= 0 || webView.height <= 0) return@postDelayed
+
+            val saveBitmap: (Bitmap) -> Unit = { source ->
+                val thumbnail = cropThumbnail(source)
+                Thread {
+                    runCatching {
+                        FileOutputStream(thumbnailFile(id)).use { output ->
+                            thumbnail.compress(Bitmap.CompressFormat.JPEG, 82, output)
+                        }
+                    }
+                    runOnUiThread {
+                        if (binding.homePanel.visibility == View.VISIBLE) {
+                            renderDashboardRecents()
+                        }
+                    }
+                }.start()
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val location = IntArray(2)
+                webView.getLocationInWindow(location)
+                val rect = Rect(
+                    location[0],
+                    location[1],
+                    location[0] + webView.width,
+                    location[1] + webView.height
+                )
+                val bitmap = Bitmap.createBitmap(
+                    webView.width,
+                    webView.height,
+                    Bitmap.Config.ARGB_8888
+                )
+                runCatching {
+                    PixelCopy.request(window, rect, bitmap, { result ->
+                        if (result == PixelCopy.SUCCESS) {
+                            saveBitmap(bitmap)
+                        } else {
+                            saveBitmap(drawWebViewBitmap(webView))
+                        }
+                    }, Handler(Looper.getMainLooper()))
+                }.onFailure {
+                    saveBitmap(drawWebViewBitmap(webView))
+                }
+            } else {
+                saveBitmap(drawWebViewBitmap(webView))
+            }
+        }, 1400L)
+    }
+
+    private fun drawWebViewBitmap(view: WebView): Bitmap {
+        val bitmap = Bitmap.createBitmap(
+            view.width.coerceAtLeast(1),
+            view.height.coerceAtLeast(1),
+            Bitmap.Config.ARGB_8888
+        )
+        val canvas = Canvas(bitmap)
+        view.draw(canvas)
+        return bitmap
+    }
+
+    private fun cropThumbnail(source: Bitmap): Bitmap {
+        if (source.width <= 1 || source.height <= 1) return source
+        val targetAspect = 16f / 9f
+        val sourceAspect = source.width.toFloat() / source.height.toFloat()
+
+        return if (sourceAspect > targetAspect) {
+            val newWidth = (source.height * targetAspect).toInt().coerceAtLeast(1)
+            val left = ((source.width - newWidth) / 2).coerceAtLeast(0)
+            Bitmap.createBitmap(source, left, 0, newWidth, source.height)
+        } else {
+            val newHeight = (source.width / targetAspect).toInt().coerceAtLeast(1)
+            val top = ((source.height - newHeight) / 2).coerceAtLeast(0)
+            Bitmap.createBitmap(source, 0, top, source.width, newHeight)
+        }
     }
 
     private fun normalizeCameraId(value: String?): String? {
@@ -760,7 +896,7 @@ class MainActivity : AppCompatActivity() {
             strokeWidth = dp(1)
             setStrokeColor(getColor(R.color.pattaya_border))
             setCardBackgroundColor(getColor(R.color.pattaya_surface))
-            layoutParams = LinearLayout.LayoutParams(dp(190), dp(104)).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(196), dp(178)).apply {
                 marginEnd = dp(8)
             }
             setOnClickListener { openFavoriteCamera(id) }
@@ -768,30 +904,62 @@ class MainActivity : AppCompatActivity() {
 
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(12), dp(10), dp(12), dp(9))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
+            )
         }
 
-        box.addView(TextView(this).apply {
+        val preview = ImageView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(102)
+            )
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            contentDescription = "ภาพล่าสุดจากกล้อง $id"
+
+            val file = thumbnailFile(id)
+            val bitmap = if (file.exists()) {
+                runCatching { BitmapFactory.decodeFile(file.absolutePath) }.getOrNull()
+            } else null
+
+            if (bitmap != null) {
+                setImageBitmap(bitmap)
+            } else {
+                setImageResource(R.drawable.ic_camera_placeholder)
+                scaleType = ImageView.ScaleType.CENTER_INSIDE
+                setPadding(dp(34), dp(22), dp(34), dp(22))
+            }
+        }
+
+        val textBox = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(11), dp(7), dp(11), dp(7))
+        }
+
+        textBox.addView(TextView(this).apply {
             text = caption
-            textSize = 10f
+            textSize = 9.5f
             setTextColor(getColor(R.color.pattaya_text_muted))
         })
 
-        box.addView(TextView(this).apply {
+        textBox.addView(TextView(this).apply {
             text = "กล้อง $id"
-            textSize = 16f
+            textSize = 14f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(getColor(R.color.pattaya_text))
-            setPadding(0, dp(4), 0, 0)
+            setPadding(0, dp(2), 0, 0)
         })
 
-        box.addView(TextView(this).apply {
+        textBox.addView(TextView(this).apply {
             text = "แตะเพื่อเปิดดูภาพสด"
-            textSize = 11f
+            textSize = 10f
             setTextColor(getColor(R.color.pattaya_blue))
-            setPadding(0, dp(5), 0, 0)
+            setPadding(0, dp(2), 0, 0)
         })
 
+        box.addView(preview)
+        box.addView(textBox)
         card.addView(box)
         return card
     }
@@ -1046,6 +1214,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         infoHandler.removeCallbacks(infoRefreshRunnable)
+        cameraTrackerHandler.removeCallbacks(cameraTrackerRunnable)
         binding.webView.apply {
             stopLoading()
             webChromeClient = null
