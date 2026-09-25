@@ -198,6 +198,211 @@
                 android:textSize="17sp"
                 app:cornerRadius="18dp" />
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="22dp"
+                android:layout_marginEnd="16dp"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/live_info_title"
+                            android:textColor="@color/pattaya_text"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="@string/live_info_subtitle"
+                            android:textColor="@color/pattaya_text_muted"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/refreshInfoButton"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="44dp"
+                        android:text="@string/refresh_info"
+                        android:textAllCaps="false"
+                        android:textSize="11sp"
+                        app:cornerRadius="15dp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/liveInfoUpdated"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="@string/live_info_updated"
+                    android:textColor="@color/pattaya_text_muted"
+                    android:textSize="10sp" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/weatherCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    app:cardBackgroundColor="@color/pattaya_surface"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="1dp"
+                    app:strokeColor="@color/pattaya_border"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="15dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/weather_title"
+                            android:textColor="@color/pattaya_text"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/weatherValue"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="7dp"
+                            android:lineSpacingExtra="2dp"
+                            android:text="@string/info_loading"
+                            android:textColor="@color/pattaya_text"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/weatherSource"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="7dp"
+                            android:text="Open-Meteo • แตะดูข้อมูลกรมอุตุนิยมวิทยา"
+                            android:textColor="@color/pattaya_blue"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/oilCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="9dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    app:cardBackgroundColor="@color/pattaya_surface"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="1dp"
+                    app:strokeColor="@color/pattaya_border"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="15dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/oil_title"
+                            android:textColor="@color/pattaya_text"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/oilValue"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="7dp"
+                            android:lineSpacingExtra="2dp"
+                            android:text="@string/info_loading"
+                            android:textColor="@color/pattaya_text"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/oilSource"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="7dp"
+                            android:text="กระทรวงพลังงาน • แตะดูข้อมูลต้นทาง"
+                            android:textColor="@color/pattaya_blue"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/goldCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="9dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    app:cardBackgroundColor="@color/pattaya_surface"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="1dp"
+                    app:strokeColor="@color/pattaya_border"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="15dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/gold_title"
+                            android:textColor="@color/pattaya_text"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/goldValue"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="7dp"
+                            android:lineSpacingExtra="2dp"
+                            android:text="@string/info_loading"
+                            android:textColor="@color/pattaya_text"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/goldSource"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="7dp"
+                            android:text="สมาคมค้าทองคำ • แตะดูข้อมูลต้นทาง"
+                            android:textColor="@color/pattaya_blue"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
