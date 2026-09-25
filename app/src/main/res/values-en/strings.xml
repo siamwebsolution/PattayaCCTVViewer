@@ -1,0 +1,172 @@
+<resources>
+    <string name="app_name">Pattaya CCTV</string>
+    <string name="brand_title">Pattaya CCTV</string>
+    <string name="brand_subtitle">Real-time traffic and Pattaya city information</string>
+    <string name="splash_title">PATTAYA CCTV</string>
+    <string name="splash_subtitle">Easy access to Pattaya city CCTV cameras</string>
+
+    <string name="hero_badge">PATTAYA SMART CITY</string>
+    <string name="hero_title">Welcome to Pattaya CCTV</string>
+    <string name="hero_message">View traffic cameras, local conditions and useful information before you travel.</string>
+
+    <string name="summary_weather">Weather Today</string>
+    <string name="summary_cctv">Pattaya CCTV</string>
+    <string name="summary_oil">Fuel Prices</string>
+    <string name="summary_gold">Gold Price</string>
+    <string name="summary_cctv_value">600+ locations</string>
+
+    <string name="quick_menu_title">Quick Menu</string>
+    <string name="home_live">Live CCTV</string>
+    <string name="home_search">Search Cameras</string>
+    <string name="home_favorites">Favorites</string>
+    <string name="home_recent">Recent</string>
+    <string name="home_map">Camera Map</string>
+    <string name="home_alerts">Alerts</string>
+    <string name="quick_live">📹\nLive CCTV</string>
+    <string name="quick_search">🔎\nSearch</string>
+    <string name="quick_favorites">❤️\nFavorites</string>
+    <string name="quick_recent">🕘\nRecent</string>
+    <string name="quick_map">📍\nCamera Map</string>
+    <string name="quick_alerts">🔔\nAlerts</string>
+    <string name="quick_contacts">☎️ Important Pattaya numbers • Tap to call</string>
+    <string name="quick_events">📅 Pattaya Events • Calendar and activities</string>
+
+    <string name="situation_title">Today’s Situation</string>
+    <string name="situation_traffic">🚗 Check Traffic</string>
+    <string name="situation_traffic_sub">View key cameras before your trip</string>
+    <string name="situation_flood">💧 Rain / Flood Check</string>
+    <string name="situation_flood_sub">Check roads and local conditions from live cameras</string>
+    <string name="situation_travel">🛣️ Before You Travel</string>
+    <string name="situation_travel_sub">Check major routes in Pattaya</string>
+
+    <string name="dashboard_favorites_title">Your Favorite Cameras</string>
+    <string name="dashboard_recents_title">Recently Viewed Cameras</string>
+    <string name="dashboard_empty_favorites">No favorite cameras yet</string>
+    <string name="dashboard_empty_recents">No recent camera history</string>
+    <string name="see_all">See all ›</string>
+    <string name="latest_10">Latest 10 items</string>
+
+    <string name="home_source">CCTV data from livestream.pattaya.go.th</string>
+    <string name="live_info_title">Live Information</string>
+    <string name="live_info_subtitle">Automatically refreshed from trusted sources</string>
+    <string name="weather_title">🌦️ Pattaya Weather</string>
+    <string name="oil_title">⛽ Fuel Prices</string>
+    <string name="gold_title">🟡 Gold Price</string>
+    <string name="info_loading">Loading latest information...</string>
+    <string name="info_unavailable">Latest data is unavailable • Tap to view source</string>
+    <string name="refresh_info">↻ Refresh</string>
+    <string name="live_info_updated">Last updated: --</string>
+    <string name="weather_source">Open-Meteo • Tap to view weather source</string>
+    <string name="weather_source_short">Open-Meteo • Tap to view source</string>
+    <string name="oil_source">Ministry of Energy • Tap to view source</string>
+    <string name="gold_source">Gold Traders Association • Tap to view source</string>
+    <string name="live_info_updating">Updating latest information...</string>
+    <string name="live_info_updated_auto">Last updated: %1$s • Auto every 10 minutes</string>
+    <string name="updating_live_data">Updating live information</string>
+
+    <string name="viewer_title">Pattaya CCTV Streaming</string>
+    <string name="back_home">‹ Home</string>
+    <string name="favorites_title">Favorite Cameras</string>
+    <string name="favorites_empty">No favorites yet\nOpen a camera and tap ☆ to save it</string>
+    <string name="favorite_added">Added to favorites</string>
+    <string name="favorite_choose_camera">Select a camera from the list or map first, then tap ☆ to save it.</string>
+    <string name="favorite_removed">Removed from favorites</string>
+    <string name="favorite_opening">Opening camera %1$s...</string>
+    <string name="favorite_open_failed">Could not open camera %1$s. Please try again.</string>
+    <string name="add_favorite">Add this camera to favorites</string>
+    <string name="remove_favorite">Remove this camera from favorites</string>
+    <string name="favorite_dashboard_caption">❤️ Favorite</string>
+    <string name="camera_label">📹 Camera %1$s</string>
+    <string name="camera_label_plain">Camera %1$s</string>
+    <string name="camera_place">📍 %1$s</string>
+    <string name="camera_place_reopen">📍 Reopen the camera to retrieve its location name</string>
+    <string name="camera_place_waiting">📍 Waiting for location name from source</string>
+    <string name="camera_thumbnail_description">Latest image from camera %1$s</string>
+    <string name="tap_to_open_live">Tap to open live view</string>
+
+    <string name="search_hint">Opening camera search. Enter a camera name or ID.</string>
+    <string name="theme_system">Theme: System</string>
+    <string name="theme_light">Theme: Light</string>
+    <string name="theme_dark">Theme: Dark</string>
+    <string name="refresh">Refresh</string>
+    <string name="open_browser">Open in browser</string>
+    <string name="open">Open</string>
+    <string name="load_error_title">Unable to open CCTV</string>
+    <string name="load_error_message">Check your internet connection and try again.</string>
+    <string name="retry">Retry</string>
+    <string name="city_logo">Pattaya City logo</string>
+    <string name="mayor_photo">App page photo</string>
+
+    <string name="events_title">Pattaya Events</string>
+    <string name="events_intro_title">📅 News, schedules and events in Pattaya</string>
+    <string name="events_intro_subtitle">Choose a date or category to find events.</string>
+    <string name="events_waiting">Waiting for an update...</string>
+    <string name="events_all_dates_hint">📅 Showing all dates • Tap a date to filter events</string>
+    <string name="events_selected_date">📅 Selected date: %1$s</string>
+    <string name="clear_date">Clear date</string>
+    <string name="filter_category">Filter by category</string>
+    <string name="events_loading">Loading events...</string>
+    <string name="events_updating">Updating latest events...</string>
+    <string name="events_load_failed">Unable to load events right now.\nTap Refresh to try again.</string>
+    <string name="events_api_failed">Could not connect to the events API</string>
+    <string name="events_updated_fmt">Last updated: %1$s • Data from khunsri.com</string>
+    <string name="all_categories">All</string>
+    <string name="events_found_prefix">Found </string>
+    <string name="events_found_suffix"> events</string>
+    <string name="events_category_prefix"> • Category: </string>
+    <string name="events_empty">There are no events to display right now.</string>
+    <string name="events_no_match">No events match the selected date or category.</string>
+    <string name="event_cover_description">Event cover: %1$s</string>
+    <string name="navigate">🗺️ Navigate</string>
+    <string name="details">Details</string>
+
+    <string name="more_title">More</string>
+    <string name="more_about">ℹ️ About Pattaya CCTV</string>
+    <string name="more_source">📹 Open the CCTV source website</string>
+    <string name="more_history">📄 How to request CCTV footage</string>
+    <string name="more_theme">🌗 Change theme</string>
+    <string name="more_language">🌐 Language / ภาษา / 中文</string>
+    <string name="more_about_text">Pattaya CCTV v2.7.0\nEasier access to Pattaya CCTV, city events and useful travel information.</string>
+    <string name="more_history_text">If you need historical CCTV footage for an incident or accident, contact Pattaya City for the official procedure and required documents.</string>
+
+    <string name="language_title">Select language</string>
+    <string name="ok">OK</string>
+    <string name="close">Close</string>
+    <string name="history_title">Request historical CCTV footage</string>
+    <string name="map_camera_hint">Tap a camera marker on the map to view live footage</string>
+
+    <string name="time_just_now">Just now</string>
+    <string name="time_minutes_ago">%1$d min ago</string>
+    <string name="time_hours_ago">%1$d hr ago</string>
+    <string name="time_days_ago">%1$d days ago</string>
+    <string name="recent_camera_row">Camera %1$s%2$s • %3$s</string>
+
+    <string name="important_contacts_title">☎️ Important Pattaya Numbers</string>
+    <string name="contact_center_name">Pattaya Contact Center</string>
+    <string name="contact_center_detail">City inquiries and reports</string>
+    <string name="contact_cctv_name">Pattaya CCTV Information Center</string>
+    <string name="contact_cctv_detail">CCTV Streaming information</string>
+    <string name="contact_city_hall_name">Pattaya City Hall</string>
+    <string name="contact_city_hall_detail">Contact Pattaya City administration</string>
+    <string name="contact_police_name">Police Emergency</string>
+    <string name="contact_police_detail">Police</string>
+    <string name="contact_ems_name">Medical Emergency</string>
+    <string name="contact_ems_detail">Emergency illness or accident</string>
+    <string name="contact_fire_name">Fire Emergency</string>
+    <string name="contact_fire_detail">Report a fire</string>
+    <string name="contact_tourist_police_name">Tourist Police</string>
+    <string name="contact_tourist_police_detail">Assistance for tourists</string>
+    <string name="contact_disaster_name">Disaster Prevention and Mitigation</string>
+    <string name="contact_disaster_detail">Report a disaster or emergency</string>
+    <string name="phone_app_missing">No phone app found on this device</string>
+
+    <string name="alerts_title">Alerts and Important Information</string>
+    <string name="alerts_message">You can currently check weather, rain, traffic and local conditions from the dashboard and live cameras. Automatic push alerts can be added when a suitable trusted alert source is available.</string>
+    <string name="view_weather">View weather</string>
+
+    <string name="nav_home">Home</string>
+    <string name="nav_live">Live</string>
+    <string name="nav_map">Map</string>
+    <string name="nav_favorite">Favorites</string>
+    <string name="nav_more">More</string>
+</resources>

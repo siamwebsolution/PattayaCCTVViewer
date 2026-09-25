@@ -53,6 +53,10 @@ import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(LocaleHelper.wrap(newBase))
+    }
+
     companion object {
         private const val BASE_URL = "https://livestream.pattaya.go.th/"
         private const val PREFS = "pattaya_cctv_prefs"
@@ -289,13 +293,13 @@ class MainActivity : AppCompatActivity() {
             }
             selectedEventDateMillis = calendar.timeInMillis
             binding.eventsDateFilterText.text =
-                "📅 วันที่เลือก: " + SimpleDateFormat("dd/MM/yyyy", Locale("th", "TH")).format(calendar.time)
+                getString(R.string.events_selected_date, SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(calendar.time))
             binding.eventsClearDateButton.visibility = View.VISIBLE
             renderFilteredEvents()
         }
         binding.eventsClearDateButton.setOnClickListener {
             selectedEventDateMillis = null
-            binding.eventsDateFilterText.text = "📅 แสดงทุกวัน • แตะวันที่ในปฏิทินเพื่อกรองกิจกรรม"
+            binding.eventsDateFilterText.text = getString(R.string.events_all_dates_hint)
             binding.eventsClearDateButton.visibility = View.GONE
             renderFilteredEvents()
         }
@@ -309,7 +313,7 @@ class MainActivity : AppCompatActivity() {
         binding.dashboardRefreshButton.setOnClickListener {
             loadLiveInfo(true)
             binding.webView.clearCache(false)
-            Toast.makeText(this, "กำลังอัปเดตข้อมูลสด", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.updating_live_data, Toast.LENGTH_SHORT).show()
         }
 
         binding.backHomeButton.setOnClickListener { showHome() }
@@ -336,18 +340,19 @@ class MainActivity : AppCompatActivity() {
             MaterialAlertDialogBuilder(this)
                 .setTitle("Pattaya CCTV")
                 .setMessage(getString(R.string.more_about_text))
-                .setPositiveButton("ตกลง", null)
+                .setPositiveButton(R.string.ok, null)
                 .show()
         }
         binding.moreSourceButton.setOnClickListener { openExternalUrl(BASE_URL) }
         binding.moreHistoryButton.setOnClickListener {
             MaterialAlertDialogBuilder(this)
-                .setTitle("การขอภาพ CCTV ย้อนหลัง")
+                .setTitle(R.string.history_title)
                 .setMessage(getString(R.string.more_history_text))
-                .setPositiveButton("ตกลง", null)
+                .setPositiveButton(R.string.ok, null)
                 .show()
         }
         binding.moreThemeButton.setOnClickListener { ThemeHelper.cycleMode(this) }
+        binding.moreLanguageButton.setOnClickListener { showLanguageDialog() }
     }
 
     private fun setupBottomNavigation() {
@@ -401,7 +406,7 @@ class MainActivity : AppCompatActivity() {
     private fun openMapView() {
         binding.bottomNavigation.menu.findItem(R.id.nav_map).isChecked = true
         openViewer(BASE_URL, false)
-        Toast.makeText(this, "แตะหมุดกล้องบนแผนที่เพื่อดูภาพสด", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, R.string.map_camera_hint, Toast.LENGTH_LONG).show()
     }
 
     private fun showHome() {
@@ -463,11 +468,11 @@ class MainActivity : AppCompatActivity() {
 
         if (forceRefresh) {
             binding.eventsList.removeAllViews()
-            binding.eventsUpdated.text = "กำลังอัปเดตกิจกรรมล่าสุด..."
+            binding.eventsUpdated.setText(R.string.events_updating)
         }
 
         Thread {
-            val result = runCatching { PattayaEventsRepository.fetchEvents() }
+            val result = runCatching { PattayaEventsRepository.fetchEvents(LocaleHelper.getLanguage(this)) }
             runOnUiThread {
                 binding.eventsProgress.visibility = View.GONE
                 binding.eventsRefreshButton.isEnabled = true
@@ -477,9 +482,9 @@ class MainActivity : AppCompatActivity() {
                     if (binding.eventsList.childCount == 0) {
                         binding.eventsEmpty.visibility = View.VISIBLE
                         binding.eventsEmpty.text =
-                            "ไม่สามารถโหลดกิจกรรมได้ในขณะนี้\nแตะปุ่ม อัปเดต เพื่อลองอีกครั้ง"
+                            getString(R.string.events_load_failed)
                     }
-                    binding.eventsUpdated.text = "เชื่อมต่อ API ไม่สำเร็จ"
+                    binding.eventsUpdated.setText(R.string.events_api_failed)
                     return@runOnUiThread
                 }
 
@@ -489,7 +494,7 @@ class MainActivity : AppCompatActivity() {
 
                 val time = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("th", "TH")).format(Date())
                 binding.eventsUpdated.text =
-                    "อัปเดตล่าสุด: " + time + " • ข้อมูลจาก khunsri.com"
+                    getString(R.string.events_updated_fmt, time)
             }
         }.start()
     }
@@ -508,7 +513,7 @@ class MainActivity : AppCompatActivity() {
 
         val allChip = Chip(this).apply {
             id = View.generateViewId()
-            text = "ทั้งหมด"
+            text = getString(R.string.all_categories)
             isCheckable = true
             isChecked = selectedEventCategory == null
             setOnClickListener {
@@ -553,11 +558,11 @@ class MainActivity : AppCompatActivity() {
         binding.eventsEmpty.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
 
         binding.eventsFilterSummary.text = buildString {
-            append("พบ ")
+            append(getString(R.string.events_found_prefix))
             append(filtered.size)
-            append(" กิจกรรม")
+            append(getString(R.string.events_found_suffix))
             selectedEventCategory?.let {
-                append(" • หมวด ")
+                append(getString(R.string.events_category_prefix))
                 append(it)
             }
             selectedEventDateMillis?.let {
@@ -568,8 +573,8 @@ class MainActivity : AppCompatActivity() {
 
         if (filtered.isEmpty()) {
             binding.eventsEmpty.text =
-                if (loadedEvents.isEmpty()) "ขณะนี้ยังไม่มีกิจกรรมที่แสดงในระบบ"
-                else "ไม่พบกิจกรรมตามวันที่หรือหมวดหมู่ที่เลือก"
+                if (loadedEvents.isEmpty()) getString(R.string.events_empty)
+                else getString(R.string.events_no_match)
             return
         }
 
@@ -654,7 +659,7 @@ class MainActivity : AppCompatActivity() {
             scaleType = ImageView.ScaleType.CENTER_INSIDE
             setPadding(dp(46), dp(28), dp(46), dp(28))
             setImageResource(R.drawable.logo_pattaya_city)
-            contentDescription = "รูปปกกิจกรรม " + event.title
+            contentDescription = getString(R.string.event_cover_description, event.title)
         }
         box.addView(cover)
 
@@ -723,7 +728,7 @@ class MainActivity : AppCompatActivity() {
             !event.mapUrl.isNullOrBlank()
         ) {
             actions.addView(MaterialButton(this).apply {
-                text = "🗺️ นำทาง"
+                text = getString(R.string.navigate)
                 isAllCaps = false
                 setOnClickListener { openEventMap(event) }
             })
@@ -735,7 +740,7 @@ class MainActivity : AppCompatActivity() {
                 null,
                 com.google.android.material.R.attr.materialButtonOutlinedStyle
             ).apply {
-                text = "รายละเอียด"
+                text = getString(R.string.details)
                 isAllCaps = false
                 setOnClickListener { openExternalUrl(url) }
                 layoutParams = LinearLayout.LayoutParams(
@@ -1361,7 +1366,7 @@ class MainActivity : AppCompatActivity() {
         binding.dashboardFavoritesEmpty.visibility = if (ids.isEmpty()) View.VISIBLE else View.GONE
 
         ids.forEach { id ->
-            binding.dashboardFavoritesList.addView(createDashboardCameraCard(id, "❤️ กล้องโปรด"))
+            binding.dashboardFavoritesList.addView(createDashboardCameraCard(id, getString(R.string.favorite_dashboard_caption)))
         }
     }
 
@@ -1395,14 +1400,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         textBox.addView(TextView(this).apply {
-            text = "📹 กล้อง $id"
+            text = getString(R.string.camera_label, id)
             textSize = 15f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(getColor(R.color.pattaya_text))
         })
 
         textBox.addView(TextView(this).apply {
-            text = cameraName(id)?.let { "📍 $it" } ?: "📍 เปิดกล้องอีกครั้งเพื่อดึงชื่อสถานที่"
+            text = cameraName(id)?.let { getString(R.string.camera_place, it) } ?: getString(R.string.camera_place_reopen)
             textSize = 10.5f
             maxLines = 2
             setTextColor(getColor(R.color.pattaya_text_muted))
@@ -1468,7 +1473,7 @@ class MainActivity : AppCompatActivity() {
                 dp(102)
             )
             scaleType = ImageView.ScaleType.CENTER_CROP
-            contentDescription = "ภาพล่าสุดจากกล้อง $id"
+            contentDescription = getString(R.string.camera_thumbnail_description, id)
 
             val file = thumbnailFile(id)
             val bitmap = if (file.exists()) {
@@ -1496,7 +1501,7 @@ class MainActivity : AppCompatActivity() {
         })
 
         textBox.addView(TextView(this).apply {
-            text = "กล้อง $id"
+            text = getString(R.string.camera_label_plain, id)
             textSize = 14f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(getColor(R.color.pattaya_text))
@@ -1504,7 +1509,7 @@ class MainActivity : AppCompatActivity() {
         })
 
         textBox.addView(TextView(this).apply {
-            text = cameraName(id)?.let { "📍 $it" } ?: "📍 กำลังรอชื่อสถานที่จากต้นฉบับ"
+            text = cameraName(id)?.let { getString(R.string.camera_place, it) } ?: getString(R.string.camera_place_waiting)
             textSize = 9.5f
             maxLines = 2
             setTextColor(getColor(R.color.pattaya_text_muted))
@@ -1512,7 +1517,7 @@ class MainActivity : AppCompatActivity() {
         })
 
         textBox.addView(TextView(this).apply {
-            text = "แตะเพื่อเปิดดูภาพสด"
+            text = getString(R.string.tap_to_open_live)
             textSize = 9.5f
             setTextColor(getColor(R.color.pattaya_blue))
             setPadding(0, dp(2), 0, 0)
@@ -1571,10 +1576,10 @@ class MainActivity : AppCompatActivity() {
     private fun timeAgo(time: Long): String {
         val diffMinutes = ((System.currentTimeMillis() - time).coerceAtLeast(0L) / 60000L)
         return when {
-            diffMinutes < 1 -> "เมื่อสักครู่"
-            diffMinutes < 60 -> "$diffMinutes นาทีที่แล้ว"
-            diffMinutes < 1440 -> "${diffMinutes / 60} ชั่วโมงที่แล้ว"
-            else -> "${diffMinutes / 1440} วันที่แล้ว"
+            diffMinutes < 1 -> getString(R.string.time_just_now)
+            diffMinutes < 60 -> getString(R.string.time_minutes_ago, diffMinutes)
+            diffMinutes < 1440 -> getString(R.string.time_hours_ago, diffMinutes / 60)
+            else -> getString(R.string.time_days_ago, diffMinutes / 1440)
         }
     }
 
@@ -1586,13 +1591,30 @@ class MainActivity : AppCompatActivity() {
         }
 
         val labels = items.map {
-            val place = cameraName(it.id)?.let { name -> " • $name" }.orEmpty()
-            "กล้อง ${it.id}$place • ${timeAgo(it.viewedAt)}"
+            val place = cameraName(it.id)?.let { " • " + it }.orEmpty()
+            getString(R.string.recent_camera_row, it.id, place, timeAgo(it.viewedAt))
         }.toTypedArray()
         MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.dashboard_recents_title))
             .setItems(labels) { _, which -> openFavoriteCamera(items[which].id) }
-            .setNegativeButton("ปิด", null)
+            .setNegativeButton(R.string.close, null)
+            .show()
+    }
+
+    private fun showLanguageDialog() {
+        val codes = arrayOf(LocaleHelper.LANG_TH, LocaleHelper.LANG_EN, LocaleHelper.LANG_ZH)
+        val labels = arrayOf("ไทย", "English", "中文（简体）")
+        val current = LocaleHelper.getLanguage(this)
+        val checked = codes.indexOf(current).coerceAtLeast(0)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.language_title))
+            .setSingleChoiceItems(labels, checked) { dialog, which ->
+                LocaleHelper.setLanguage(this, codes[which])
+                dialog.dismiss()
+                recreate()
+            }
+            .setNegativeButton(R.string.close, null)
             .show()
     }
 
@@ -1605,14 +1627,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun showImportantContacts() {
         val contacts = listOf(
-            ImportantContact("🏙️", "Pattaya Contact Center", "1337", "สอบถามและแจ้งเรื่องเมืองพัทยา"),
-            ImportantContact("📹", "ศูนย์ข้อมูล CCTV เมืองพัทยา", "038253299", "ติดต่อเกี่ยวกับระบบ CCTV Streaming"),
-            ImportantContact("🏢", "ศาลาว่าการเมืองพัทยา", "038253100", "ติดต่อสำนักงานเมืองพัทยา"),
-            ImportantContact("🚓", "เหตุด่วนเหตุร้าย", "191", "ตำรวจ"),
-            ImportantContact("🚑", "การแพทย์ฉุกเฉิน", "1669", "เจ็บป่วยหรืออุบัติเหตุฉุกเฉิน"),
-            ImportantContact("🔥", "ดับเพลิง", "199", "แจ้งเหตุเพลิงไหม้"),
-            ImportantContact("👮", "ตำรวจท่องเที่ยว", "1155", "ช่วยเหลือนักท่องเที่ยว"),
-            ImportantContact("⛈️", "ป้องกันและบรรเทาสาธารณภัย", "1784", "แจ้งเหตุสาธารณภัย")
+            ImportantContact("🏙️", getString(R.string.contact_center_name), "1337", getString(R.string.contact_center_detail)),
+            ImportantContact("📹", getString(R.string.contact_cctv_name), "038253299", getString(R.string.contact_cctv_detail)),
+            ImportantContact("🏢", getString(R.string.contact_city_hall_name), "038253100", getString(R.string.contact_city_hall_detail)),
+            ImportantContact("🚓", getString(R.string.contact_police_name), "191", getString(R.string.contact_police_detail)),
+            ImportantContact("🚑", getString(R.string.contact_ems_name), "1669", getString(R.string.contact_ems_detail)),
+            ImportantContact("🔥", getString(R.string.contact_fire_name), "199", getString(R.string.contact_fire_detail)),
+            ImportantContact("👮", getString(R.string.contact_tourist_police_name), "1155", getString(R.string.contact_tourist_police_detail)),
+            ImportantContact("⛈️", getString(R.string.contact_disaster_name), "1784", getString(R.string.contact_disaster_detail))
         )
 
         val labels = contacts.map {
@@ -1620,11 +1642,11 @@ class MainActivity : AppCompatActivity() {
         }.toTypedArray()
 
         MaterialAlertDialogBuilder(this)
-            .setTitle("☎️ เบอร์สำคัญเมืองพัทยา")
+            .setTitle(R.string.important_contacts_title)
             .setItems(labels) { _, which ->
                 dialNumber(contacts[which].number)
             }
-            .setNegativeButton("ปิด", null)
+            .setNegativeButton(R.string.close, null)
             .show()
     }
 
@@ -1632,23 +1654,23 @@ class MainActivity : AppCompatActivity() {
         runCatching {
             startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$number")))
         }.onFailure {
-            Toast.makeText(this, "ไม่พบแอปโทรศัพท์ในเครื่อง", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.phone_app_missing, Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun showAlertsInfo() {
         MaterialAlertDialogBuilder(this)
-            .setTitle("แจ้งเตือนและข้อมูลสำคัญ")
-            .setMessage("ขณะนี้สามารถตรวจสอบสภาพอากาศ ฝน การจราจร และสภาพพื้นที่จาก Dashboard และกล้องสดได้ ส่วน Push Notification อัตโนมัติจะเปิดใช้งานเมื่อมีแหล่งข้อมูลแจ้งเตือนที่เหมาะสมและเชื่อถือได้")
-            .setPositiveButton("ดูอากาศ") { _, _ -> openExternalUrl(LiveInfoRepository.WEATHER_DETAIL_URL) }
-            .setNegativeButton("ปิด", null)
+            .setTitle(R.string.alerts_title)
+            .setMessage(R.string.alerts_message)
+            .setPositiveButton(R.string.view_weather) { _, _ -> openExternalUrl(LiveInfoRepository.WEATHER_DETAIL_URL) }
+            .setNegativeButton(R.string.close, null)
             .show()
     }
 
     private fun setupLiveInfo() {
-        binding.weatherSource.text = "Open-Meteo • แตะดูพยากรณ์จากกรมอุตุนิยมวิทยา"
-        binding.oilSource.text = "กระทรวงพลังงาน • แตะดูข้อมูลต้นทาง"
-        binding.goldSource.text = "สมาคมค้าทองคำ • แตะดูข้อมูลต้นทาง"
+        binding.weatherSource.setText(R.string.weather_source)
+        binding.oilSource.setText(R.string.oil_source)
+        binding.goldSource.setText(R.string.gold_source)
     }
 
     private fun loadCachedInfo() {
@@ -1677,7 +1699,7 @@ class MainActivity : AppCompatActivity() {
             binding.goldValue.setText(R.string.info_loading)
         }
 
-        binding.liveInfoUpdated.text = "กำลังอัปเดตข้อมูลล่าสุด..."
+        binding.liveInfoUpdated.setText(R.string.live_info_updating)
 
         Thread {
             val result = runCatching { LiveInfoRepository.fetchWeather() }
@@ -1751,7 +1773,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateInfoTimestamp() {
         val time = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("th", "TH")).format(Date())
-        binding.liveInfoUpdated.text = "อัปเดตล่าสุด: $time • อัตโนมัติทุก 10 นาที"
+        binding.liveInfoUpdated.text = getString(R.string.live_info_updated_auto, time)
     }
 
     private fun openExternalUrl(url: String) {

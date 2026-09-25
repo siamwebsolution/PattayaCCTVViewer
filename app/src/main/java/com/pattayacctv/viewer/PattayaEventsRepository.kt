@@ -26,7 +26,7 @@ object PattayaEventsRepository {
         val longitude: String?
     )
 
-    fun fetchEvents(): List<PattayaEvent> {
+    fun fetchEvents(language: String = "th"): List<PattayaEvent> {
         val connection = (URL(API_URL).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             connectTimeout = 15_000
@@ -51,7 +51,7 @@ object PattayaEventsRepository {
             val objects = extractEventObjects(root)
 
             objects.mapIndexedNotNull { index, obj ->
-                parseEvent(obj, index)
+                parseEvent(obj, index, language)
             }
         } finally {
             connection.disconnect()
@@ -87,10 +87,10 @@ object PattayaEventsRepository {
         }
     }
 
-    private fun parseEvent(obj: JSONObject, index: Int): PattayaEvent? {
+    private fun parseEvent(obj: JSONObject, index: Int, language: String): PattayaEvent? {
         val title = firstString(
             obj,
-            listOf("title", "event_title", "event_name", "name", "subject")
+            localizedKeys(listOf("title", "event_title", "event_name", "name", "subject"), language)
         ) ?: return null
 
         val id = firstString(
@@ -100,10 +100,7 @@ object PattayaEventsRepository {
 
         val category = firstString(
             obj,
-            listOf(
-                "category_name", "category", "event_category",
-                "category_title", "type_name", "type"
-            )
+            localizedKeys(listOf("category_name", "category", "event_category", "category_title", "type_name", "type"), language)
         )
 
         val startDate = firstString(
@@ -134,18 +131,12 @@ object PattayaEventsRepository {
 
         val location = firstString(
             obj,
-            listOf(
-                "location", "venue", "place", "event_location",
-                "location_name", "address", "venue_name"
-            )
+            localizedKeys(listOf("location", "venue", "place", "event_location", "location_name", "address", "venue_name"), language)
         )
 
         val description = firstString(
             obj,
-            listOf(
-                "description", "detail", "details", "content",
-                "summary", "event_description", "short_description"
-            )
+            localizedKeys(listOf("description", "detail", "details", "content", "summary", "event_description", "short_description"), language)
         )?.let(::plainText)
 
         val imageUrl = firstString(
@@ -198,6 +189,15 @@ object PattayaEventsRepository {
             latitude = latitude,
             longitude = longitude
         )
+    }
+
+    private fun localizedKeys(base: List<String>, language: String): List<String> {
+        val suffixes = when (language.lowercase()) {
+            "en" -> listOf("_en", "_english")
+            "zh" -> listOf("_zh", "_cn", "_zh_cn", "_chinese")
+            else -> listOf("_th", "_thai")
+        }
+        return suffixes.flatMap { suffix -> base.map { it + suffix } } + base
     }
 
     private fun firstString(obj: JSONObject, keys: List<String>): String? {

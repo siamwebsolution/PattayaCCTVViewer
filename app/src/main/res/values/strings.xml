@@ -22,6 +22,14 @@
     <string name="home_recent">ดูล่าสุด</string>
     <string name="home_map">แผนที่กล้อง</string>
     <string name="home_alerts">แจ้งเตือน</string>
+    <string name="quick_live">📹\nดูกล้องสด</string>
+    <string name="quick_search">🔎\nค้นหากล้อง</string>
+    <string name="quick_favorites">❤️\nกล้องโปรด</string>
+    <string name="quick_recent">🕘\nดูล่าสุด</string>
+    <string name="quick_map">📍\nแผนที่กล้อง</string>
+    <string name="quick_alerts">🔔\nแจ้งเตือน</string>
+    <string name="quick_contacts">☎️ เบอร์สำคัญเมืองพัทยา • แตะเพื่อโทร</string>
+    <string name="quick_events">📅 กิจกรรมเมืองพัทยา • ดูตารางงานและกิจกรรม</string>
 
     <string name="situation_title">สถานการณ์วันนี้</string>
     <string name="situation_traffic">🚗 ตรวจสอบการจราจร</string>
@@ -36,6 +44,7 @@
     <string name="dashboard_empty_favorites">ยังไม่มีกล้องโปรด</string>
     <string name="dashboard_empty_recents">ยังไม่มีประวัติกล้องล่าสุด</string>
     <string name="see_all">ดูทั้งหมด ›</string>
+    <string name="latest_10">ล่าสุด 10 รายการ</string>
 
     <string name="home_source">ข้อมูล CCTV จาก livestream.pattaya.go.th</string>
     <string name="live_info_title">ข้อมูลสด</string>
@@ -47,6 +56,13 @@
     <string name="info_unavailable">ยังไม่สามารถอัปเดตข้อมูลใหม่ได้ • แตะดูข้อมูลจากแหล่งต้นทาง</string>
     <string name="refresh_info">↻ อัปเดต</string>
     <string name="live_info_updated">อัปเดตล่าสุด: --</string>
+    <string name="weather_source">Open-Meteo • แตะดูพยากรณ์จากกรมอุตุนิยมวิทยา</string>
+    <string name="weather_source_short">Open-Meteo • แตะดูกรมอุตุนิยมวิทยา</string>
+    <string name="oil_source">กระทรวงพลังงาน • แตะดูข้อมูลต้นทาง</string>
+    <string name="gold_source">สมาคมค้าทองคำ • แตะดูข้อมูลต้นทาง</string>
+    <string name="live_info_updating">กำลังอัปเดตข้อมูลล่าสุด...</string>
+    <string name="live_info_updated_auto">อัปเดตล่าสุด: %1$s • อัตโนมัติทุก 10 นาที</string>
+    <string name="updating_live_data">กำลังอัปเดตข้อมูลสด</string>
 
     <string name="viewer_title">CCTV Streaming เมืองพัทยา</string>
     <string name="back_home">‹ หน้าแรก</string>
@@ -59,6 +75,14 @@
     <string name="favorite_open_failed">ยังเปิดกล้อง %1$s ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง</string>
     <string name="add_favorite">เพิ่มกล้องนี้เป็นรายการโปรด</string>
     <string name="remove_favorite">นำกล้องนี้ออกจากรายการโปรด</string>
+    <string name="favorite_dashboard_caption">❤️ กล้องโปรด</string>
+    <string name="camera_label">📹 กล้อง %1$s</string>
+    <string name="camera_label_plain">กล้อง %1$s</string>
+    <string name="camera_place">📍 %1$s</string>
+    <string name="camera_place_reopen">📍 เปิดกล้องอีกครั้งเพื่อดึงชื่อสถานที่</string>
+    <string name="camera_place_waiting">📍 กำลังรอชื่อสถานที่จากต้นฉบับ</string>
+    <string name="camera_thumbnail_description">ภาพล่าสุดจากกล้อง %1$s</string>
+    <string name="tap_to_open_live">แตะเพื่อเปิดดูภาพสด</string>
 
     <string name="search_hint">กำลังเปิดช่องค้นหากล้อง กรุณาพิมพ์ชื่อหรือรหัสกล้อง</string>
     <string name="theme_system">ธีม: ระบบ</string>
@@ -73,13 +97,72 @@
     <string name="city_logo">โลโก้เมืองพัทยา</string>
     <string name="mayor_photo">ภาพประกอบหน้าแอป</string>
 
+    <string name="events_title">กิจกรรมเมืองพัทยา</string>
+    <string name="events_intro_title">📅 ข่าวสาร ตารางงาน และกิจกรรมเมืองพัทยา</string>
+    <string name="events_intro_subtitle">เลือกวันจากปฏิทิน หรือเลือกหมวดหมู่เพื่อค้นหากิจกรรมได้ทันที</string>
+    <string name="events_waiting">กำลังรออัปเดตข้อมูล...</string>
+    <string name="events_all_dates_hint">📅 แสดงทุกวัน • แตะวันที่ในปฏิทินเพื่อกรองกิจกรรม</string>
+    <string name="events_selected_date">📅 วันที่เลือก: %1$s</string>
+    <string name="clear_date">ล้างวันที่</string>
+    <string name="filter_category">กรองตามหมวดหมู่</string>
+    <string name="events_loading">กำลังโหลดกิจกรรม...</string>
+    <string name="events_updating">กำลังอัปเดตกิจกรรมล่าสุด...</string>
+    <string name="events_load_failed">ไม่สามารถโหลดกิจกรรมได้ในขณะนี้\nแตะปุ่ม อัปเดต เพื่อลองอีกครั้ง</string>
+    <string name="events_api_failed">เชื่อมต่อ API ไม่สำเร็จ</string>
+    <string name="events_updated_fmt">อัปเดตล่าสุด: %1$s • ข้อมูลจาก khunsri.com</string>
+    <string name="all_categories">ทั้งหมด</string>
+    <string name="events_found_prefix">พบ </string>
+    <string name="events_found_suffix"> กิจกรรม</string>
+    <string name="events_category_prefix"> • หมวด </string>
+    <string name="events_empty">ขณะนี้ยังไม่มีกิจกรรมที่แสดงในระบบ</string>
+    <string name="events_no_match">ไม่พบกิจกรรมตามวันที่หรือหมวดหมู่ที่เลือก</string>
+    <string name="event_cover_description">รูปปกกิจกรรม %1$s</string>
+    <string name="navigate">🗺️ นำทาง</string>
+    <string name="details">รายละเอียด</string>
+
     <string name="more_title">เพิ่มเติม</string>
     <string name="more_about">ℹ️ เกี่ยวกับแอป Pattaya CCTV</string>
     <string name="more_source">📹 เปิดเว็บไซต์ CCTV ต้นทาง</string>
     <string name="more_history">📄 วิธีขอภาพ CCTV ย้อนหลัง</string>
     <string name="more_theme">🌗 เปลี่ยนธีม</string>
-    <string name="more_about_text">Pattaya CCTV v2.2.0\nแอปช่วยให้เข้าถึงข้อมูลกล้อง CCTV เมืองพัทยาและข้อมูลประกอบการเดินทางได้สะดวกขึ้น</string>
+    <string name="more_language">🌐 ภาษา / Language / 中文</string>
+    <string name="more_about_text">Pattaya CCTV v2.7.0\nแอปช่วยให้เข้าถึงข้อมูลกล้อง CCTV เมืองพัทยา กิจกรรม และข้อมูลประกอบการเดินทางได้สะดวกขึ้น</string>
     <string name="more_history_text">กรณีต้องการภาพย้อนหลังเพื่อใช้ประกอบเหตุการณ์หรืออุบัติเหตุ โปรดติดต่อหน่วยงานเมืองพัทยาเพื่อสอบถามขั้นตอนและเอกสารที่จำเป็นอย่างเป็นทางการ</string>
+
+    <string name="language_title">เลือกภาษา</string>
+    <string name="ok">ตกลง</string>
+    <string name="close">ปิด</string>
+    <string name="history_title">การขอภาพ CCTV ย้อนหลัง</string>
+    <string name="map_camera_hint">แตะหมุดกล้องบนแผนที่เพื่อดูภาพสด</string>
+
+    <string name="time_just_now">เมื่อสักครู่</string>
+    <string name="time_minutes_ago">%1$d นาทีที่แล้ว</string>
+    <string name="time_hours_ago">%1$d ชั่วโมงที่แล้ว</string>
+    <string name="time_days_ago">%1$d วันที่แล้ว</string>
+    <string name="recent_camera_row">กล้อง %1$s%2$s • %3$s</string>
+
+    <string name="important_contacts_title">☎️ เบอร์สำคัญเมืองพัทยา</string>
+    <string name="contact_center_name">Pattaya Contact Center</string>
+    <string name="contact_center_detail">สอบถามและแจ้งเรื่องเมืองพัทยา</string>
+    <string name="contact_cctv_name">ศูนย์ข้อมูล CCTV เมืองพัทยา</string>
+    <string name="contact_cctv_detail">ติดต่อเกี่ยวกับระบบ CCTV Streaming</string>
+    <string name="contact_city_hall_name">ศาลาว่าการเมืองพัทยา</string>
+    <string name="contact_city_hall_detail">ติดต่อสำนักงานเมืองพัทยา</string>
+    <string name="contact_police_name">เหตุด่วนเหตุร้าย</string>
+    <string name="contact_police_detail">ตำรวจ</string>
+    <string name="contact_ems_name">การแพทย์ฉุกเฉิน</string>
+    <string name="contact_ems_detail">เจ็บป่วยหรืออุบัติเหตุฉุกเฉิน</string>
+    <string name="contact_fire_name">ดับเพลิง</string>
+    <string name="contact_fire_detail">แจ้งเหตุเพลิงไหม้</string>
+    <string name="contact_tourist_police_name">ตำรวจท่องเที่ยว</string>
+    <string name="contact_tourist_police_detail">ช่วยเหลือนักท่องเที่ยว</string>
+    <string name="contact_disaster_name">ป้องกันและบรรเทาสาธารณภัย</string>
+    <string name="contact_disaster_detail">แจ้งเหตุสาธารณภัย</string>
+    <string name="phone_app_missing">ไม่พบแอปโทรศัพท์ในเครื่อง</string>
+
+    <string name="alerts_title">แจ้งเตือนและข้อมูลสำคัญ</string>
+    <string name="alerts_message">ขณะนี้สามารถตรวจสอบสภาพอากาศ ฝน การจราจร และสภาพพื้นที่จาก Dashboard และกล้องสดได้ ส่วน Push Notification อัตโนมัติจะเปิดใช้งานเมื่อมีแหล่งข้อมูลแจ้งเตือนที่เหมาะสมและเชื่อถือได้</string>
+    <string name="view_weather">ดูอากาศ</string>
 
     <string name="nav_home">หน้าแรก</string>
     <string name="nav_live">กล้องสด</string>

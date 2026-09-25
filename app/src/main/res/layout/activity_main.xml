@@ -340,7 +340,7 @@
                                 android:layout_height="76dp"
                                 android:layout_marginEnd="5dp"
                                 android:layout_weight="1"
-                                android:text="📹&#10;ดูกล้องสด"
+                                android:text="@string/quick_live"
                                 android:textAllCaps="false"
                                 android:textSize="12sp"
                                 app:cornerRadius="17dp" />
@@ -353,7 +353,7 @@
                                 android:layout_marginStart="5dp"
                                 android:layout_marginEnd="5dp"
                                 android:layout_weight="1"
-                                android:text="🔎&#10;ค้นหากล้อง"
+                                android:text="@string/quick_search"
                                 android:textAllCaps="false"
                                 android:textSize="12sp"
                                 app:cornerRadius="17dp" />
@@ -365,7 +365,7 @@
                                 android:layout_height="76dp"
                                 android:layout_marginStart="5dp"
                                 android:layout_weight="1"
-                                android:text="❤️&#10;กล้องโปรด"
+                                android:text="@string/quick_favorites"
                                 android:textAllCaps="false"
                                 android:textSize="12sp"
                                 app:cornerRadius="17dp" />
@@ -384,7 +384,7 @@
                                 android:layout_height="76dp"
                                 android:layout_marginEnd="5dp"
                                 android:layout_weight="1"
-                                android:text="🕘&#10;ดูล่าสุด"
+                                android:text="@string/quick_recent"
                                 android:textAllCaps="false"
                                 android:textSize="12sp"
                                 app:cornerRadius="17dp" />
@@ -397,7 +397,7 @@
                                 android:layout_marginStart="5dp"
                                 android:layout_marginEnd="5dp"
                                 android:layout_weight="1"
-                                android:text="📍&#10;แผนที่กล้อง"
+                                android:text="@string/quick_map"
                                 android:textAllCaps="false"
                                 android:textSize="12sp"
                                 app:cornerRadius="17dp" />
@@ -409,7 +409,7 @@
                                 android:layout_height="76dp"
                                 android:layout_marginStart="5dp"
                                 android:layout_weight="1"
-                                android:text="🔔&#10;แจ้งเตือน"
+                                android:text="@string/quick_alerts"
                                 android:textAllCaps="false"
                                 android:textSize="12sp"
                                 app:cornerRadius="17dp" />
@@ -421,7 +421,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="58dp"
                             android:layout_marginTop="8dp"
-                            android:text="☎️ เบอร์สำคัญเมืองพัทยา • แตะเพื่อโทร"
+                            android:text="@string/quick_contacts"
                             android:textAllCaps="false"
                             android:textSize="12sp"
                             app:cornerRadius="17dp" />
@@ -432,7 +432,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="58dp"
                             android:layout_marginTop="8dp"
-                            android:text="📅 กิจกรรมเมืองพัทยา • ดูตารางงานและกิจกรรม"
+                            android:text="@string/quick_events"
                             android:textAllCaps="false"
                             android:textSize="12sp"
                             app:cornerRadius="17dp" />
@@ -589,7 +589,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="ล่าสุด 10 รายการ"
+                            android:text="@string/latest_10"
                             android:textColor="@color/pattaya_text_muted"
                             android:textSize="11sp" />
                     </LinearLayout>
@@ -683,7 +683,7 @@
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="14dp">
                             <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/weather_title" android:textColor="@color/pattaya_text" android:textSize="15sp" android:textStyle="bold" />
                             <TextView android:id="@+id/weatherValue" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:lineSpacingExtra="2dp" android:text="@string/info_loading" android:textColor="@color/pattaya_text" android:textSize="13sp" />
-                            <TextView android:id="@+id/weatherSource" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Open-Meteo • แตะดูกรมอุตุนิยมวิทยา" android:textColor="@color/pattaya_blue" android:textSize="10sp" />
+                            <TextView android:id="@+id/weatherSource" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/weather_source_short" android:textColor="@color/pattaya_blue" android:textSize="10sp" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
@@ -705,7 +705,7 @@
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="14dp">
                             <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/oil_title" android:textColor="@color/pattaya_text" android:textSize="15sp" android:textStyle="bold" />
                             <TextView android:id="@+id/oilValue" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:lineSpacingExtra="2dp" android:text="@string/info_loading" android:textColor="@color/pattaya_text" android:textSize="13sp" />
-                            <TextView android:id="@+id/oilSource" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="กระทรวงพลังงาน • แตะดูข้อมูลต้นทาง" android:textColor="@color/pattaya_blue" android:textSize="10sp" />
+                            <TextView android:id="@+id/oilSource" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/oil_source" android:textColor="@color/pattaya_blue" android:textSize="10sp" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
@@ -727,7 +727,7 @@
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="14dp">
                             <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/gold_title" android:textColor="@color/pattaya_text" android:textSize="15sp" android:textStyle="bold" />
                             <TextView android:id="@+id/goldValue" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:lineSpacingExtra="2dp" android:text="@string/info_loading" android:textColor="@color/pattaya_text" android:textSize="13sp" />
-                            <TextView android:id="@+id/goldSource" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="สมาคมค้าทองคำ • แตะดูข้อมูลต้นทาง" android:textColor="@color/pattaya_blue" android:textSize="10sp" />
+                            <TextView android:id="@+id/goldSource" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/gold_source" android:textColor="@color/pattaya_blue" android:textSize="10sp" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
@@ -768,7 +768,7 @@
                         style="@style/Widget.Material3.Button.TextButton"
                         android:layout_width="wrap_content"
                         android:layout_height="46dp"
-                        android:text="‹ หน้าแรก"
+                        android:text="@string/back_home"
                         android:textAllCaps="false"
                         android:textColor="@color/white" />
 
@@ -777,7 +777,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:gravity="center"
-                        android:text="กิจกรรมเมืองพัทยา"
+                        android:text="@string/events_title"
                         android:textColor="@color/white"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -787,7 +787,7 @@
                         style="@style/Widget.Material3.Button.TextButton"
                         android:layout_width="wrap_content"
                         android:layout_height="46dp"
-                        android:text="↻ อัปเดต"
+                        android:text="@string/refresh_info"
                         android:textAllCaps="false"
                         android:textColor="@color/white" />
                 </LinearLayout>
@@ -818,7 +818,7 @@
                             android:layout_marginStart="16dp"
                             android:layout_marginTop="14dp"
                             android:layout_marginEnd="16dp"
-                            android:text="📅 ข่าวสาร ตารางงาน และกิจกรรมเมืองพัทยา"
+                            android:text="@string/events_intro_title"
                             android:textColor="@color/pattaya_text"
                             android:textSize="16sp"
                             android:textStyle="bold" />
@@ -829,7 +829,7 @@
                             android:layout_marginStart="16dp"
                             android:layout_marginTop="3dp"
                             android:layout_marginEnd="16dp"
-                            android:text="เลือกวันจากปฏิทิน หรือเลือกหมวดหมู่เพื่อค้นหากิจกรรมได้ทันที"
+                            android:text="@string/events_intro_subtitle"
                             android:textColor="@color/pattaya_text_muted"
                             android:textSize="10.5sp" />
 
@@ -840,7 +840,7 @@
                             android:layout_marginStart="16dp"
                             android:layout_marginTop="4dp"
                             android:layout_marginEnd="16dp"
-                            android:text="กำลังรออัปเดตข้อมูล..."
+                            android:text="@string/events_waiting"
                             android:textColor="@color/pattaya_blue"
                             android:textSize="10sp" />
 
@@ -882,7 +882,7 @@
                                         android:layout_width="0dp"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="📅 แสดงทุกวัน • แตะวันที่ในปฏิทินเพื่อกรองกิจกรรม"
+                                        android:text="@string/events_all_dates_hint"
                                         android:textColor="@color/pattaya_text_muted"
                                         android:textSize="10.5sp" />
 
@@ -891,7 +891,7 @@
                                         style="@style/Widget.Material3.Button.TextButton"
                                         android:layout_width="wrap_content"
                                         android:layout_height="40dp"
-                                        android:text="ล้างวันที่"
+                                        android:text="@string/clear_date"
                                         android:textAllCaps="false"
                                         android:visibility="gone" />
                                 </LinearLayout>
@@ -904,7 +904,7 @@
                             android:layout_marginStart="16dp"
                             android:layout_marginTop="14dp"
                             android:layout_marginEnd="16dp"
-                            android:text="กรองตามหมวดหมู่"
+                            android:text="@string/filter_category"
                             android:textColor="@color/pattaya_text"
                             android:textSize="13sp"
                             android:textStyle="bold" />
@@ -935,7 +935,7 @@
                             android:layout_marginStart="16dp"
                             android:layout_marginTop="4dp"
                             android:layout_marginEnd="16dp"
-                            android:text="กำลังโหลดกิจกรรม..."
+                            android:text="@string/events_loading"
                             android:textColor="@color/pattaya_blue"
                             android:textSize="10.5sp" />
 
@@ -946,7 +946,7 @@
                             android:layout_margin="20dp"
                             android:gravity="center"
                             android:padding="20dp"
-                            android:text="กำลังโหลดกิจกรรม..."
+                            android:text="@string/events_loading"
                             android:textColor="@color/pattaya_text_muted"
                             android:textSize="13sp"
                             android:visibility="gone" />
@@ -1225,6 +1225,18 @@
                         android:layout_marginTop="9dp"
                         android:layout_marginEnd="14dp"
                         android:text="@string/more_theme"
+                        android:textAllCaps="false"
+                        app:cornerRadius="18dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/moreLanguageButton"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:layout_marginStart="14dp"
+                        android:layout_marginTop="9dp"
+                        android:layout_marginEnd="14dp"
+                        android:text="@string/more_language"
                         android:textAllCaps="false"
                         app:cornerRadius="18dp" />
                 </LinearLayout>

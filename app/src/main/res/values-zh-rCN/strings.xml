@@ -1,0 +1,172 @@
+<resources>
+    <string name="app_name">Pattaya CCTV</string>
+    <string name="brand_title">Pattaya CCTV</string>
+    <string name="brand_subtitle">芭堤雅实时交通与城市信息</string>
+    <string name="splash_title">PATTAYA CCTV</string>
+    <string name="splash_subtitle">轻松查看芭堤雅城市监控</string>
+
+    <string name="hero_badge">PATTAYA SMART CITY</string>
+    <string name="hero_title">欢迎使用芭堤雅 CCTV</string>
+    <string name="hero_message">查看交通摄像头、路况和出行前的重要城市信息。</string>
+
+    <string name="summary_weather">今日天气</string>
+    <string name="summary_cctv">芭堤雅 CCTV</string>
+    <string name="summary_oil">燃油价格</string>
+    <string name="summary_gold">黄金价格</string>
+    <string name="summary_cctv_value">600+ 个点位</string>
+
+    <string name="quick_menu_title">快捷菜单</string>
+    <string name="home_live">实时监控</string>
+    <string name="home_search">搜索摄像头</string>
+    <string name="home_favorites">收藏</string>
+    <string name="home_recent">最近查看</string>
+    <string name="home_map">摄像头地图</string>
+    <string name="home_alerts">提醒</string>
+    <string name="quick_live">📹\n实时监控</string>
+    <string name="quick_search">🔎\n搜索</string>
+    <string name="quick_favorites">❤️\n收藏</string>
+    <string name="quick_recent">🕘\n最近查看</string>
+    <string name="quick_map">📍\n摄像头地图</string>
+    <string name="quick_alerts">🔔\n提醒</string>
+    <string name="quick_contacts">☎️ 芭堤雅重要电话 • 点击拨号</string>
+    <string name="quick_events">📅 芭堤雅活动 • 日历与活动信息</string>
+
+    <string name="situation_title">今日情况</string>
+    <string name="situation_traffic">🚗 查看交通</string>
+    <string name="situation_traffic_sub">出发前查看主要路口摄像头</string>
+    <string name="situation_flood">💧 降雨 / 积水</string>
+    <string name="situation_flood_sub">通过实时摄像头查看道路与区域情况</string>
+    <string name="situation_travel">🛣️ 出行前</string>
+    <string name="situation_travel_sub">查看芭堤雅主要路线</string>
+
+    <string name="dashboard_favorites_title">我的收藏摄像头</string>
+    <string name="dashboard_recents_title">最近查看的摄像头</string>
+    <string name="dashboard_empty_favorites">还没有收藏摄像头</string>
+    <string name="dashboard_empty_recents">暂无最近查看记录</string>
+    <string name="see_all">查看全部 ›</string>
+    <string name="latest_10">最近 10 条</string>
+
+    <string name="home_source">CCTV 数据来自 livestream.pattaya.go.th</string>
+    <string name="live_info_title">实时信息</string>
+    <string name="live_info_subtitle">自动从可信来源更新</string>
+    <string name="weather_title">🌦️ 芭堤雅天气</string>
+    <string name="oil_title">⛽ 燃油价格</string>
+    <string name="gold_title">🟡 黄金价格</string>
+    <string name="info_loading">正在加载最新信息...</string>
+    <string name="info_unavailable">暂时无法更新 • 点击查看数据来源</string>
+    <string name="refresh_info">↻ 刷新</string>
+    <string name="live_info_updated">最后更新：--</string>
+    <string name="weather_source">Open-Meteo • 点击查看天气来源</string>
+    <string name="weather_source_short">Open-Meteo • 点击查看来源</string>
+    <string name="oil_source">泰国能源部 • 点击查看来源</string>
+    <string name="gold_source">泰国黄金交易商协会 • 点击查看来源</string>
+    <string name="live_info_updating">正在更新最新信息...</string>
+    <string name="live_info_updated_auto">最后更新：%1$s • 每 10 分钟自动更新</string>
+    <string name="updating_live_data">正在更新实时信息</string>
+
+    <string name="viewer_title">芭堤雅 CCTV 实时画面</string>
+    <string name="back_home">‹ 首页</string>
+    <string name="favorites_title">收藏摄像头</string>
+    <string name="favorites_empty">还没有收藏\n打开摄像头后点击上方 ☆ 保存</string>
+    <string name="favorite_added">已加入收藏</string>
+    <string name="favorite_choose_camera">请先从列表或地图中选择摄像头，然后点击 ☆ 保存。</string>
+    <string name="favorite_removed">已从收藏移除</string>
+    <string name="favorite_opening">正在打开摄像头 %1$s...</string>
+    <string name="favorite_open_failed">无法打开摄像头 %1$s，请重试。</string>
+    <string name="add_favorite">收藏此摄像头</string>
+    <string name="remove_favorite">取消收藏此摄像头</string>
+    <string name="favorite_dashboard_caption">❤️ 收藏</string>
+    <string name="camera_label">📹 摄像头 %1$s</string>
+    <string name="camera_label_plain">摄像头 %1$s</string>
+    <string name="camera_place">📍 %1$s</string>
+    <string name="camera_place_reopen">📍 请再次打开摄像头以获取地点名称</string>
+    <string name="camera_place_waiting">📍 正在等待来源地点名称</string>
+    <string name="camera_thumbnail_description">摄像头 %1$s 的最新画面</string>
+    <string name="tap_to_open_live">点击查看实时画面</string>
+
+    <string name="search_hint">正在打开摄像头搜索，请输入名称或编号。</string>
+    <string name="theme_system">主题：跟随系统</string>
+    <string name="theme_light">主题：浅色</string>
+    <string name="theme_dark">主题：深色</string>
+    <string name="refresh">刷新</string>
+    <string name="open_browser">在浏览器中打开</string>
+    <string name="open">打开</string>
+    <string name="load_error_title">无法打开 CCTV</string>
+    <string name="load_error_message">请检查网络连接后重试。</string>
+    <string name="retry">重试</string>
+    <string name="city_logo">芭堤雅市标志</string>
+    <string name="mayor_photo">应用页面图片</string>
+
+    <string name="events_title">芭堤雅活动</string>
+    <string name="events_intro_title">📅 芭堤雅新闻、日程与活动</string>
+    <string name="events_intro_subtitle">选择日期或类别快速查找活动。</string>
+    <string name="events_waiting">等待更新...</string>
+    <string name="events_all_dates_hint">📅 显示所有日期 • 点击日期筛选活动</string>
+    <string name="events_selected_date">📅 已选日期：%1$s</string>
+    <string name="clear_date">清除日期</string>
+    <string name="filter_category">按类别筛选</string>
+    <string name="events_loading">正在加载活动...</string>
+    <string name="events_updating">正在更新最新活动...</string>
+    <string name="events_load_failed">目前无法加载活动。\n点击刷新重试。</string>
+    <string name="events_api_failed">无法连接活动 API</string>
+    <string name="events_updated_fmt">最后更新：%1$s • 数据来自 khunsri.com</string>
+    <string name="all_categories">全部</string>
+    <string name="events_found_prefix">找到 </string>
+    <string name="events_found_suffix"> 个活动</string>
+    <string name="events_category_prefix"> • 类别：</string>
+    <string name="events_empty">目前没有可显示的活动。</string>
+    <string name="events_no_match">没有符合所选日期或类别的活动。</string>
+    <string name="event_cover_description">活动封面：%1$s</string>
+    <string name="navigate">🗺️ 导航</string>
+    <string name="details">详情</string>
+
+    <string name="more_title">更多</string>
+    <string name="more_about">ℹ️ 关于 Pattaya CCTV</string>
+    <string name="more_source">📹 打开 CCTV 来源网站</string>
+    <string name="more_history">📄 如何申请历史 CCTV 录像</string>
+    <string name="more_theme">🌗 更换主题</string>
+    <string name="more_language">🌐 语言 / Language / ภาษา</string>
+    <string name="more_about_text">Pattaya CCTV v2.7.0\n更方便地访问芭堤雅 CCTV、城市活动与出行信息。</string>
+    <string name="more_history_text">如因事故或事件需要历史 CCTV 录像，请联系芭堤雅市政府了解官方流程和所需文件。</string>
+
+    <string name="language_title">选择语言</string>
+    <string name="ok">确定</string>
+    <string name="close">关闭</string>
+    <string name="history_title">申请历史 CCTV 录像</string>
+    <string name="map_camera_hint">点击地图上的摄像头标记查看实时画面</string>
+
+    <string name="time_just_now">刚刚</string>
+    <string name="time_minutes_ago">%1$d 分钟前</string>
+    <string name="time_hours_ago">%1$d 小时前</string>
+    <string name="time_days_ago">%1$d 天前</string>
+    <string name="recent_camera_row">摄像头 %1$s%2$s • %3$s</string>
+
+    <string name="important_contacts_title">☎️ 芭堤雅重要电话</string>
+    <string name="contact_center_name">Pattaya Contact Center</string>
+    <string name="contact_center_detail">城市咨询与问题反馈</string>
+    <string name="contact_cctv_name">芭堤雅 CCTV 信息中心</string>
+    <string name="contact_cctv_detail">CCTV Streaming 相关咨询</string>
+    <string name="contact_city_hall_name">芭堤雅市政厅</string>
+    <string name="contact_city_hall_detail">联系芭堤雅市政府</string>
+    <string name="contact_police_name">报警电话</string>
+    <string name="contact_police_detail">警察</string>
+    <string name="contact_ems_name">医疗急救</string>
+    <string name="contact_ems_detail">紧急疾病或事故</string>
+    <string name="contact_fire_name">消防</string>
+    <string name="contact_fire_detail">火灾报警</string>
+    <string name="contact_tourist_police_name">旅游警察</string>
+    <string name="contact_tourist_police_detail">游客协助</string>
+    <string name="contact_disaster_name">防灾减灾</string>
+    <string name="contact_disaster_detail">灾害与紧急事件报告</string>
+    <string name="phone_app_missing">设备中没有找到电话应用</string>
+
+    <string name="alerts_title">提醒与重要信息</string>
+    <string name="alerts_message">目前可通过首页和实时摄像头查看天气、降雨、交通和区域情况。当有合适且可信的提醒数据源后，可进一步启用自动推送通知。</string>
+    <string name="view_weather">查看天气</string>
+
+    <string name="nav_home">首页</string>
+    <string name="nav_live">实时</string>
+    <string name="nav_map">地图</string>
+    <string name="nav_favorite">收藏</string>
+    <string name="nav_more">更多</string>
+</resources>
