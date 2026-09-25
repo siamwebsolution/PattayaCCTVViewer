@@ -59,6 +59,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     data class RecentCamera(val id: String, val viewedAt: Long)
+    data class CameraInfo(val id: String, val label: String?)
 
     private lateinit var binding: ActivityMainBinding
     private var customView: View? = null
@@ -263,6 +264,7 @@ class MainActivity : AppCompatActivity() {
         binding.recentButton.setOnClickListener { showRecentDialog() }
         binding.mapButton.setOnClickListener { openMapView() }
         binding.alertsButton.setOnClickListener { showAlertsInfo() }
+        binding.contactsButton.setOnClickListener { showImportantContacts() }
 
         binding.situationTraffic.setOnClickListener { openViewer(BASE_URL, true) }
         binding.situationFlood.setOnClickListener { openMapView() }
@@ -429,6 +431,7 @@ class MainActivity : AppCompatActivity() {
               if(window.__pattayaFavoriteTrackerInstalled) return 'ready';
               window.__pattayaFavoriteTrackerInstalled = true;
               window.__pattayaLastCameraId = null;
+              window.__pattayaLastCameraLabel = null;
 
               function findId(text){
                 if(!text) return null;
@@ -439,8 +442,12 @@ class MainActivity : AppCompatActivity() {
 
               function remember(text){
                 if(!text || text.length > 500) return;
-                var id = findId(text);
-                if(id) window.__pattayaLastCameraId = id;
+                var clean = String(text).replace(/\s+/g,' ').trim();
+                var id = findId(clean);
+                if(id){
+                  window.__pattayaLastCameraId = id;
+                  if(clean.length <= 220) window.__pattayaLastCameraLabel = clean;
+                }
               }
 
               document.addEventListener('click', function(ev){
@@ -481,24 +488,48 @@ class MainActivity : AppCompatActivity() {
                 return m[0].replace(/\s+/g,'').replace(/^CAM(\d+)$/i,'CAM-$1').toUpperCase();
               }
 
-              var fromUrl = normalise(decodeURIComponent(window.location.href || ''));
-              if(fromUrl) return fromUrl;
-              if(window.__pattayaLastCameraId) return normalise(window.__pattayaLastCameraId);
+              function compact(text){
+                return String(text || '').replace(/\s+/g,' ').trim();
+              }
 
-              var nodes = document.querySelectorAll('[aria-selected="true"],[class*="selected"],[class*="active"],[class*="popup"],[class*="modal"]');
-              for(var i=0; i<nodes.length; i++){
-                var text = (nodes[i].innerText || nodes[i].textContent || '').trim();
-                if(text && text.length < 500){
-                  var id = normalise(text);
-                  if(id) return id;
+              function labelFor(id){
+                var best = compact(window.__pattayaLastCameraLabel || '');
+                if(best && normalise(best) === id && best.length <= 220) return best;
+
+                var selectors = '[aria-selected="true"],[class*="selected"],[class*="active"],[class*="popup"],[class*="modal"],button,a,li,[role="button"],div,span,p';
+                var nodes = document.querySelectorAll(selectors);
+                var candidates = [];
+                for(var i=0; i<nodes.length; i++){
+                  var text = compact(nodes[i].innerText || nodes[i].textContent || '');
+                  if(!text || text.length > 220) continue;
+                  if(normalise(text) === id) candidates.push(text);
+                }
+                candidates.sort(function(a,b){ return a.length - b.length; });
+                return candidates.length ? candidates[0] : null;
+              }
+
+              var id = normalise(decodeURIComponent(window.location.href || ''));
+              if(!id && window.__pattayaLastCameraId) id = normalise(window.__pattayaLastCameraId);
+
+              if(!id){
+                var nodes = document.querySelectorAll('[aria-selected="true"],[class*="selected"],[class*="active"],[class*="popup"],[class*="modal"]');
+                for(var i=0; i<nodes.length; i++){
+                  var text = compact(nodes[i].innerText || nodes[i].textContent || '');
+                  if(text && text.length < 500){
+                    id = normalise(text);
+                    if(id) break;
+                  }
                 }
               }
-              return null;
+
+              if(!id) return null;
+              return JSON.stringify({id:id,label:labelFor(id)});
             })();
             """.trimIndent()
         ) { jsValue ->
-            val cameraId = normalizeCameraId(decodeJavascriptString(jsValue)) ?: return@evaluateJavascript
-            trackRecentCamera(cameraId)
+            val info = parseCameraInfo(jsValue) ?: return@evaluateJavascript
+            info.label?.let { saveCameraName(info.id, it) }
+            trackRecentCamera(info.id)
         }
     }
 
@@ -609,6 +640,46 @@ class MainActivity : AppCompatActivity() {
         return if (Regex("""^(?:(?:CC|NC|SC|RC)-\d+|CAM-\d+)$""").matches(id)) id else null
     }
 
+    private fun parseCameraInfo(jsValue: String?): CameraInfo? {
+        val raw = decodeJavascriptString(jsValue) ?: return null
+        return runCatching {
+            val obj = JSONObject(raw)
+            val id = normalizeCameraId(obj.optString("id")) ?: return@runCatching null
+            val label = cleanCameraLabel(id, obj.optString("label").takeIf { it.isNotBlank() })
+            CameraInfo(id, label)
+        }.getOrNull()
+    }
+
+    private fun cleanCameraLabel(cameraId: String, raw: String?): String? {
+        if (raw.isNullOrBlank()) return null
+        var text = raw.replace(Regex("""\s+"""), " ").trim()
+        text = text.replace(cameraId, "", ignoreCase = true)
+        text = text.replace(Regex("""^(?:กล้อง|camera|cctv)\s*[:\-–—]*\s*""", RegexOption.IGNORE_CASE), "")
+        text = text.replace(Regex("""^[\-–—:|•·]+|[\-–—:|•·]+$"""), "").trim()
+        if (text.equals("Live View", ignoreCase = true) ||
+            text.equals("Camera List", ignoreCase = true) ||
+            text.length < 2 ||
+            text.length > 120
+        ) return null
+        return text
+    }
+
+    private fun saveCameraName(cameraId: String, rawLabel: String?) {
+        val id = normalizeCameraId(cameraId) ?: return
+        val label = cleanCameraLabel(id, rawLabel) ?: return
+        getSharedPreferences(PREFS, MODE_PRIVATE)
+            .edit()
+            .putString("camera_name_$id", label)
+            .apply()
+    }
+
+    private fun cameraName(cameraId: String): String? {
+        val id = normalizeCameraId(cameraId) ?: return null
+        return getSharedPreferences(PREFS, MODE_PRIVATE)
+            .getString("camera_name_$id", null)
+            ?.takeIf { it.isNotBlank() }
+    }
+
     private fun favorites(): MutableSet<String> =
         getSharedPreferences(PREFS, MODE_PRIVATE)
             .getStringSet(KEY_FAVORITES, emptySet())
@@ -632,31 +703,50 @@ class MainActivity : AppCompatActivity() {
                 if(!m) return null;
                 return m[0].replace(/\s+/g,'').replace(/^CAM(\d+)$/i,'CAM-$1').toUpperCase();
               }
-              var fromUrl = normalise(decodeURIComponent(window.location.href || ''));
-              if(fromUrl) return fromUrl;
-              if(window.__pattayaLastCameraId) return normalise(window.__pattayaLastCameraId);
+              function compact(text){
+                return String(text || '').replace(/\s+/g,' ').trim();
+              }
+              function labelFor(id){
+                var best = compact(window.__pattayaLastCameraLabel || '');
+                if(best && normalise(best) === id && best.length <= 220) return best;
+                var nodes = document.querySelectorAll('[aria-selected="true"],[class*="selected"],[class*="active"],[class*="popup"],[class*="modal"],button,a,li,[role="button"],div,span,p');
+                var candidates = [];
+                for(var i=0; i<nodes.length; i++){
+                  var text = compact(nodes[i].innerText || nodes[i].textContent || '');
+                  if(!text || text.length > 220) continue;
+                  if(normalise(text) === id) candidates.push(text);
+                }
+                candidates.sort(function(a,b){ return a.length - b.length; });
+                return candidates.length ? candidates[0] : null;
+              }
 
-              var nodes = document.querySelectorAll('[aria-selected="true"],[class*="selected"],[class*="active"],[class*="popup"],[class*="modal"]');
-              for(var i=0; i<nodes.length; i++){
-                var text = (nodes[i].innerText || nodes[i].textContent || '').trim();
-                if(text && text.length < 500){
-                  var id = normalise(text);
-                  if(id) return id;
+              var id = normalise(decodeURIComponent(window.location.href || ''));
+              if(!id && window.__pattayaLastCameraId) id = normalise(window.__pattayaLastCameraId);
+              if(!id){
+                var nodes = document.querySelectorAll('[aria-selected="true"],[class*="selected"],[class*="active"],[class*="popup"],[class*="modal"]');
+                for(var i=0; i<nodes.length; i++){
+                  var text = compact(nodes[i].innerText || nodes[i].textContent || '');
+                  if(text && text.length < 500){
+                    id = normalise(text);
+                    if(id) break;
+                  }
                 }
               }
-              return null;
+              if(!id) return null;
+              return JSON.stringify({id:id,label:labelFor(id)});
             })();
             """.trimIndent()
         ) { jsValue ->
-            val selectedId = normalizeCameraId(decodeJavascriptString(jsValue))
-                ?: extractCameraId(binding.webView.url)
+            val info = parseCameraInfo(jsValue)
+            val selectedId = info?.id ?: extractCameraId(binding.webView.url)
 
             if (selectedId.isNullOrBlank()) {
                 Toast.makeText(this, R.string.favorite_choose_camera, Toast.LENGTH_LONG).show()
                 return@evaluateJavascript
             }
 
-            recordRecent(selectedId)
+            info?.label?.let { saveCameraName(selectedId, it) }
+            trackRecentCamera(selectedId)
 
             val canonicalUrl = cameraUrl(selectedId)
             val set = favorites()
@@ -671,6 +761,7 @@ class MainActivity : AppCompatActivity() {
             saveFavorites(set)
             updateFavoriteButton(canonicalUrl)
             renderDashboardRecents()
+            renderDashboardFavorites()
 
             Toast.makeText(
                 this,
@@ -844,11 +935,8 @@ class MainActivity : AppCompatActivity() {
             setPadding(dp(14), dp(11), dp(9), dp(11))
         }
 
-        val label = TextView(this).apply {
-            text = "📹 กล้อง $id"
-            textSize = 15f
-            setTypeface(typeface, Typeface.BOLD)
-            setTextColor(getColor(R.color.pattaya_text))
+        val textBox = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
                 0,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -857,13 +945,28 @@ class MainActivity : AppCompatActivity() {
             setOnClickListener { openFavoriteCamera(id) }
         }
 
+        textBox.addView(TextView(this).apply {
+            text = "📹 กล้อง $id"
+            textSize = 15f
+            setTypeface(typeface, Typeface.BOLD)
+            setTextColor(getColor(R.color.pattaya_text))
+        })
+
+        textBox.addView(TextView(this).apply {
+            text = cameraName(id)?.let { "📍 $it" } ?: "📍 เปิดกล้องอีกครั้งเพื่อดึงชื่อสถานที่"
+            textSize = 10.5f
+            maxLines = 2
+            setTextColor(getColor(R.color.pattaya_text_muted))
+            setPadding(0, dp(3), dp(6), 0)
+        })
+
         val open = MaterialButton(this).apply {
             text = getString(R.string.open)
             isAllCaps = false
             setOnClickListener { openFavoriteCamera(id) }
         }
 
-        row.addView(label)
+        row.addView(textBox)
         row.addView(open)
 
         if (removable) {
@@ -896,7 +999,7 @@ class MainActivity : AppCompatActivity() {
             strokeWidth = dp(1)
             setStrokeColor(getColor(R.color.pattaya_border))
             setCardBackgroundColor(getColor(R.color.pattaya_surface))
-            layoutParams = LinearLayout.LayoutParams(dp(196), dp(178)).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(210), dp(202)).apply {
                 marginEnd = dp(8)
             }
             setOnClickListener { openFavoriteCamera(id) }
@@ -952,8 +1055,16 @@ class MainActivity : AppCompatActivity() {
         })
 
         textBox.addView(TextView(this).apply {
+            text = cameraName(id)?.let { "📍 $it" } ?: "📍 กำลังรอชื่อสถานที่จากต้นฉบับ"
+            textSize = 9.5f
+            maxLines = 2
+            setTextColor(getColor(R.color.pattaya_text_muted))
+            setPadding(0, dp(2), 0, 0)
+        })
+
+        textBox.addView(TextView(this).apply {
             text = "แตะเพื่อเปิดดูภาพสด"
-            textSize = 10f
+            textSize = 9.5f
             setTextColor(getColor(R.color.pattaya_blue))
             setPadding(0, dp(2), 0, 0)
         })
@@ -1025,12 +1136,55 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val labels = items.map { "กล้อง ${it.id} • ${timeAgo(it.viewedAt)}" }.toTypedArray()
+        val labels = items.map {
+            val place = cameraName(it.id)?.let { name -> " • $name" }.orEmpty()
+            "กล้อง ${it.id}$place • ${timeAgo(it.viewedAt)}"
+        }.toTypedArray()
         MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.dashboard_recents_title))
             .setItems(labels) { _, which -> openFavoriteCamera(items[which].id) }
             .setNegativeButton("ปิด", null)
             .show()
+    }
+
+    private data class ImportantContact(
+        val icon: String,
+        val name: String,
+        val number: String,
+        val detail: String
+    )
+
+    private fun showImportantContacts() {
+        val contacts = listOf(
+            ImportantContact("🏙️", "Pattaya Contact Center", "1337", "สอบถามและแจ้งเรื่องเมืองพัทยา"),
+            ImportantContact("📹", "ศูนย์ข้อมูล CCTV เมืองพัทยา", "038253299", "ติดต่อเกี่ยวกับระบบ CCTV Streaming"),
+            ImportantContact("🏢", "ศาลาว่าการเมืองพัทยา", "038253100", "ติดต่อสำนักงานเมืองพัทยา"),
+            ImportantContact("🚓", "เหตุด่วนเหตุร้าย", "191", "ตำรวจ"),
+            ImportantContact("🚑", "การแพทย์ฉุกเฉิน", "1669", "เจ็บป่วยหรืออุบัติเหตุฉุกเฉิน"),
+            ImportantContact("🔥", "ดับเพลิง", "199", "แจ้งเหตุเพลิงไหม้"),
+            ImportantContact("👮", "ตำรวจท่องเที่ยว", "1155", "ช่วยเหลือนักท่องเที่ยว"),
+            ImportantContact("⛈️", "ป้องกันและบรรเทาสาธารณภัย", "1784", "แจ้งเหตุสาธารณภัย")
+        )
+
+        val labels = contacts.map {
+            "${it.icon} ${it.name}\n${it.number} • ${it.detail}"
+        }.toTypedArray()
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("☎️ เบอร์สำคัญเมืองพัทยา")
+            .setItems(labels) { _, which ->
+                dialNumber(contacts[which].number)
+            }
+            .setNegativeButton("ปิด", null)
+            .show()
+    }
+
+    private fun dialNumber(number: String) {
+        runCatching {
+            startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$number")))
+        }.onFailure {
+            Toast.makeText(this, "ไม่พบแอปโทรศัพท์ในเครื่อง", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun showAlertsInfo() {
