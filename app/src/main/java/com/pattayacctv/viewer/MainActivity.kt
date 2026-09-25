@@ -24,6 +24,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -67,7 +68,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        WindowCompat.setDecorFitsSystemWindows(window, true)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        setupSystemBars()
 
         setupBranding()
         setupThemeButton()
@@ -82,6 +84,23 @@ class MainActivity : AppCompatActivity() {
         loadCachedInfo()
         loadLiveInfo()
         showHome()
+    }
+
+    private fun setupSystemBars() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.mainShell) { view, insets ->
+            val systemBars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or
+                    WindowInsetsCompat.Type.displayCutout()
+            )
+            view.setPadding(
+                systemBars.left,
+                systemBars.top,
+                systemBars.right,
+                systemBars.bottom
+            )
+            insets
+        }
+        ViewCompat.requestApplyInsets(binding.mainShell)
     }
 
     private fun setupBranding() {
