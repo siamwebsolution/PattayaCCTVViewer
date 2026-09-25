@@ -29,6 +29,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pattayacctv.viewer.databinding.ActivityMainBinding
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -41,8 +42,14 @@ class MainActivity : AppCompatActivity() {
         private const val BASE_URL = "https://livestream.pattaya.go.th/"
         private const val PREFS = "pattaya_cctv_prefs"
         private const val KEY_FAVORITES = "favorite_camera_urls"
+        private const val KEY_RECENTS = "recent_camera_ids"
+        private const val KEY_WEATHER_CACHE = "weather_cache"
+        private const val KEY_OIL_CACHE = "oil_cache"
+        private const val KEY_GOLD_CACHE = "gold_cache"
         private const val INFO_REFRESH_MS = 10 * 60 * 1000L
     }
+
+    data class RecentCamera(val id: String, val viewedAt: Long)
 
     private lateinit var binding: ActivityMainBinding
     private var customView: View? = null
@@ -66,8 +73,13 @@ class MainActivity : AppCompatActivity() {
         setupThemeButton()
         setupWebView()
         setupActions()
+        setupBottomNavigation()
         setupBackNavigation()
         setupLiveInfo()
+
+        renderDashboardFavorites()
+        renderDashboardRecents()
+        loadCachedInfo()
         loadLiveInfo()
         showHome()
     }
@@ -79,9 +91,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupThemeButton() {
         updateThemeButtonText()
-        binding.themeButton.setOnClickListener {
-            ThemeHelper.cycleMode(this)
-        }
+        binding.themeButton.setOnClickListener { ThemeHelper.cycleMode(this) }
     }
 
     private fun updateThemeButtonText() {
@@ -114,7 +124,7 @@ class MainActivity : AppCompatActivity() {
             allowFileAccess = false
             allowContentAccess = false
             mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-            userAgentString = "$userAgentString PattayaCCTVViewer/2.1.1"
+            userAgentString = "$userAgentString PattayaCCTVViewer/2.2"
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -123,8 +133,8 @@ class MainActivity : AppCompatActivity() {
 
         binding.webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                val url = request?.url ?: return false
-                return handleUrl(url)
+                val uri = request?.url ?: return false
+                return handleUrl(uri)
             }
 
             @Deprecated("Deprecated in Java")
@@ -142,19 +152,30 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 binding.swipeRefresh.isRefreshing = false
                 if (!pageFailed) binding.errorPanel.visibility = View.GONE
-                binding.viewerTitle.text = view?.title?.takeIf { it.isNotBlank() } ?: getString(R.string.viewer_title)
+                binding.viewerTitle.text =
+                    view?.title?.takeIf { it.isNotBlank() } ?: getString(R.string.viewer_title)
+
+                extractCameraId(url)?.let { recordRecent(it) }
                 updateFavoriteButton(url)
+
                 view?.evaluateJavascript("(function(){return window.location.href;})();") { jsValue ->
-                    updateFavoriteButton(decodeJavascriptString(jsValue) ?: url)
+                    val actualUrl = decodeJavascriptString(jsValue) ?: url
+                    extractCameraId(actualUrl)?.let { recordRecent(it) }
+                    updateFavoriteButton(actualUrl)
                 }
+
                 injectFavoriteTracker()
+
                 if (pendingFavoriteCameraId != null) {
                     openPendingFavoriteCamera()
                 }
+
                 if (focusSearchAfterLoad) {
                     focusSearchAfterLoad = false
                     focusCameraSearch()
                 }
+
+                renderDashboardRecents()
             }
 
             override fun onReceivedError(
@@ -174,22 +195,19 @@ class MainActivity : AppCompatActivity() {
         binding.webView.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
                 binding.pageProgress.progress = newProgress
-                binding.pageProgress.visibility = if (newProgress in 1..99) View.VISIBLE else View.GONE
+                binding.pageProgress.visibility =
+                    if (newProgress in 1..99) View.VISIBLE else View.GONE
             }
 
             override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
-                if (view == null) {
-                    callback?.onCustomViewHidden()
-                    return
-                }
-                if (customView != null) {
+                if (view == null || customView != null) {
                     callback?.onCustomViewHidden()
                     return
                 }
 
                 customView = view
                 customViewCallback = callback
-                binding.viewerPanel.visibility = View.GONE
+                binding.mainShell.visibility = View.GONE
                 binding.fullscreenContainer.visibility = View.VISIBLE
                 binding.fullscreenContainer.addView(
                     view,
@@ -215,6 +233,21 @@ class MainActivity : AppCompatActivity() {
         binding.liveButton.setOnClickListener { openViewer(BASE_URL, false) }
         binding.searchButton.setOnClickListener { openViewer(BASE_URL, true) }
         binding.favoritesButton.setOnClickListener { showFavorites() }
+        binding.recentButton.setOnClickListener { showRecentDialog() }
+        binding.mapButton.setOnClickListener { openMapView() }
+        binding.alertsButton.setOnClickListener { showAlertsInfo() }
+
+        binding.situationTraffic.setOnClickListener { openViewer(BASE_URL, true) }
+        binding.situationFlood.setOnClickListener { openMapView() }
+        binding.situationTravel.setOnClickListener { openMapView() }
+
+        binding.dashboardFavoritesAll.setOnClickListener { showFavorites() }
+
+        binding.dashboardRefreshButton.setOnClickListener {
+            loadLiveInfo(true)
+            binding.webView.clearCache(false)
+            Toast.makeText(this, "กำลังอัปเดตข้อมูลสด", Toast.LENGTH_SHORT).show()
+        }
 
         binding.backHomeButton.setOnClickListener { showHome() }
         binding.favoritesBackButton.setOnClickListener { showHome() }
@@ -230,10 +263,42 @@ class MainActivity : AppCompatActivity() {
             binding.webView.loadUrl(binding.webView.url ?: BASE_URL)
         }
         binding.favoriteCurrentButton.setOnClickListener { toggleCurrentFavorite() }
+
         binding.refreshInfoButton.setOnClickListener { loadLiveInfo(true) }
         binding.weatherCard.setOnClickListener { openExternalUrl(LiveInfoRepository.WEATHER_DETAIL_URL) }
         binding.oilCard.setOnClickListener { openExternalUrl(LiveInfoRepository.OIL_DETAIL_URL) }
         binding.goldCard.setOnClickListener { openExternalUrl(LiveInfoRepository.GOLD_DETAIL_URL) }
+
+        binding.moreAboutButton.setOnClickListener {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Pattaya CCTV")
+                .setMessage(getString(R.string.more_about_text))
+                .setPositiveButton("ตกลง", null)
+                .show()
+        }
+        binding.moreSourceButton.setOnClickListener { openExternalUrl(BASE_URL) }
+        binding.moreHistoryButton.setOnClickListener {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("การขอภาพ CCTV ย้อนหลัง")
+                .setMessage(getString(R.string.more_history_text))
+                .setPositiveButton("ตกลง", null)
+                .show()
+        }
+        binding.moreThemeButton.setOnClickListener { ThemeHelper.cycleMode(this) }
+    }
+
+    private fun setupBottomNavigation() {
+        binding.bottomNavigation.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_home -> showHome()
+                R.id.nav_live -> openViewer(BASE_URL, false)
+                R.id.nav_map -> openMapView()
+                R.id.nav_favorite -> showFavorites()
+                R.id.nav_more -> showMore()
+                else -> return@setOnItemSelectedListener false
+            }
+            true
+        }
     }
 
     private fun setupBackNavigation() {
@@ -241,9 +306,11 @@ class MainActivity : AppCompatActivity() {
             override fun handleOnBackPressed() {
                 when {
                     customView != null -> hideCustomView()
-                    binding.viewerPanel.visibility == View.VISIBLE && binding.webView.canGoBack() -> binding.webView.goBack()
+                    binding.viewerPanel.visibility == View.VISIBLE && binding.webView.canGoBack() ->
+                        binding.webView.goBack()
                     binding.viewerPanel.visibility == View.VISIBLE -> showHome()
                     binding.favoritesPanel.visibility == View.VISIBLE -> showHome()
+                    binding.morePanel.visibility == View.VISIBLE -> showHome()
                     else -> finish()
                 }
             }
@@ -253,167 +320,62 @@ class MainActivity : AppCompatActivity() {
     private fun openViewer(url: String, focusSearch: Boolean) {
         binding.homePanel.visibility = View.GONE
         binding.favoritesPanel.visibility = View.GONE
+        binding.morePanel.visibility = View.GONE
         binding.viewerPanel.visibility = View.VISIBLE
         focusSearchAfterLoad = focusSearch
-        if (binding.webView.url == url && !focusSearch) {
+
+        if (binding.webView.url == url) {
             binding.webView.reload()
         } else {
             binding.webView.loadUrl(url)
         }
-        if (focusSearch && binding.webView.url == url) {
-            binding.webView.reload()
-        }
     }
 
-    private fun openFavoriteCamera(cameraId: String) {
-        val normalized = normalizeCameraId(cameraId)
-        if (normalized == null) {
-            Toast.makeText(this, R.string.favorite_open_failed, Toast.LENGTH_LONG).show()
+    private fun openMapView() {
+        if (binding.bottomNavigation.selectedItemId != R.id.nav_map) {
+            binding.bottomNavigation.selectedItemId = R.id.nav_map
             return
         }
-
-        pendingFavoriteCameraId = normalized
-        binding.homePanel.visibility = View.GONE
-        binding.favoritesPanel.visibility = View.GONE
-        binding.viewerPanel.visibility = View.VISIBLE
-        focusSearchAfterLoad = false
-
-        Toast.makeText(
-            this,
-            getString(R.string.favorite_opening, normalized),
-            Toast.LENGTH_SHORT
-        ).show()
-
-        // Always start from the CCTV home page, then use the site's own search/list UI.
-        // Direct liff.state URLs are not consistently honored outside LIFF, which is
-        // why saved favorites previously opened the page but not the selected camera.
-        binding.webView.loadUrl(BASE_URL)
-    }
-
-    private fun openPendingFavoriteCamera() {
-        val cameraId = pendingFavoriteCameraId ?: return
-        val jsCameraId = JSONObject.quote(cameraId)
-
-        binding.webView.evaluateJavascript(
-            """
-            (function(target){
-              var attempts = 0;
-
-              function setNativeValue(input, value) {
-                var proto = Object.getPrototypeOf(input);
-                var desc = proto && Object.getOwnPropertyDescriptor(proto, 'value');
-                if (desc && desc.set) desc.set.call(input, value);
-                else input.value = value;
-                input.dispatchEvent(new Event('input', {bubbles:true}));
-                input.dispatchEvent(new Event('change', {bubbles:true}));
-                input.dispatchEvent(new KeyboardEvent('keyup', {bubbles:true, key:'Enter'}));
-              }
-
-              function exactMatch(text) {
-                if (!text) return false;
-                var cleaned = String(text).replace(/\s+/g,' ').trim().toUpperCase();
-                return cleaned === target ||
-                       cleaned.indexOf(target + ' ') === 0 ||
-                       cleaned.indexOf(' ' + target + ' ') >= 0 ||
-                       cleaned.endsWith(' ' + target);
-              }
-
-              function clickCamera() {
-                attempts++;
-
-                var input = document.querySelector(
-                  'input[placeholder*="Search camera"], input[type="search"], input[placeholder*="camera" i]'
-                );
-                if (input) {
-                  setNativeValue(input, target);
-                  input.focus();
-                }
-
-                var candidates = Array.from(document.querySelectorAll(
-                  'button, a, [role="button"], li, tr, .card, [class*="camera"], [class*="list"]'
-                )).filter(function(el){
-                  var text = (el.innerText || el.textContent || '').trim();
-                  return text && text.length < 700 && exactMatch(text);
-                });
-
-                // Prefer the smallest matching element because large containers can
-                // contain several camera IDs at once.
-                candidates.sort(function(a,b){
-                  var ta = (a.innerText || a.textContent || '').length;
-                  var tb = (b.innerText || b.textContent || '').length;
-                  return ta - tb;
-                });
-
-                if (candidates.length) {
-                  var el = candidates[0];
-                  var clickable = el.closest('button, a, [role="button"], li, tr') || el;
-                  try {
-                    clickable.scrollIntoView({behavior:'smooth', block:'center'});
-                    clickable.click();
-                    window.__pattayaLastCameraId = target;
-                    return true;
-                  } catch(e) {}
-                }
-
-                // Fallback: scan text nodes/containers after search filtering.
-                var all = Array.from(document.querySelectorAll('div, span, p, td'));
-                for (var i=0; i<all.length; i++) {
-                  var text = (all[i].innerText || all[i].textContent || '').trim();
-                  if (text && text.length < 250 && exactMatch(text)) {
-                    var p = all[i].closest('button, a, [role="button"], li, tr, [class*="camera"]') || all[i];
-                    try {
-                      p.scrollIntoView({behavior:'smooth', block:'center'});
-                      p.click();
-                      window.__pattayaLastCameraId = target;
-                      return true;
-                    } catch(e) {}
-                  }
-                }
-
-                return false;
-              }
-
-              return new Promise(function(resolve){
-                var timer = setInterval(function(){
-                  if (clickCamera()) {
-                    clearInterval(timer);
-                    setTimeout(function(){ resolve('opened'); }, 900);
-                  } else if (attempts >= 24) {
-                    clearInterval(timer);
-                    resolve('not-found');
-                  }
-                }, 500);
-              });
-            })($jsCameraId);
-            """.trimIndent()
-        ) { result ->
-            val status = decodeJavascriptString(result)
-            if (status == "opened") {
-                pendingFavoriteCameraId = null
-                updateFavoriteButton(cameraUrl(cameraId))
-            } else if (status == "not-found") {
-                pendingFavoriteCameraId = null
-                Toast.makeText(
-                    this,
-                    getString(R.string.favorite_open_failed, cameraId),
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-        }
+        openViewer(BASE_URL, false)
+        Toast.makeText(this, "แตะหมุดกล้องบนแผนที่เพื่อดูภาพสด", Toast.LENGTH_LONG).show()
     }
 
     private fun showHome() {
         binding.viewerPanel.visibility = View.GONE
         binding.favoritesPanel.visibility = View.GONE
+        binding.morePanel.visibility = View.GONE
         binding.homePanel.visibility = View.VISIBLE
+
+        renderDashboardFavorites()
+        renderDashboardRecents()
         updateThemeButtonText()
+
+        if (binding.bottomNavigation.selectedItemId != R.id.nav_home) {
+            binding.bottomNavigation.selectedItemId = R.id.nav_home
+        }
     }
 
     private fun showFavorites() {
         renderFavorites()
         binding.homePanel.visibility = View.GONE
         binding.viewerPanel.visibility = View.GONE
+        binding.morePanel.visibility = View.GONE
         binding.favoritesPanel.visibility = View.VISIBLE
+
+        if (binding.bottomNavigation.selectedItemId != R.id.nav_favorite) {
+            binding.bottomNavigation.selectedItemId = R.id.nav_favorite
+        }
+    }
+
+    private fun showMore() {
+        binding.homePanel.visibility = View.GONE
+        binding.viewerPanel.visibility = View.GONE
+        binding.favoritesPanel.visibility = View.GONE
+        binding.morePanel.visibility = View.VISIBLE
+
+        if (binding.bottomNavigation.selectedItemId != R.id.nav_more) {
+            binding.bottomNavigation.selectedItemId = R.id.nav_more
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -423,14 +385,14 @@ class MainActivity : AppCompatActivity() {
             (function(){
               var tries = 0;
               var timer = setInterval(function(){
-                var el = document.querySelector('input[placeholder*="Search camera"], input[type="search"]');
+                var el = document.querySelector('input[placeholder*="Search camera"], input[type="search"], input[placeholder*="camera" i]');
                 if(el){
                   clearInterval(timer);
                   el.scrollIntoView({behavior:'smooth',block:'center'});
                   el.focus();
                   el.click();
                 }
-                if(++tries > 12) clearInterval(timer);
+                if(++tries > 16) clearInterval(timer);
               }, 300);
               return 'search-ready';
             })();
@@ -470,7 +432,6 @@ class MainActivity : AppCompatActivity() {
                     break;
                   }
                 }
-
                 setTimeout(function(){
                   var nodes = document.querySelectorAll('[aria-selected="true"],[class*="selected"],[class*="active"],[class*="popup"],[class*="modal"]');
                   for(var j=0; j<nodes.length; j++){
@@ -497,11 +458,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun favorites(): MutableSet<String> =
-        getSharedPreferences(PREFS, MODE_PRIVATE).getStringSet(KEY_FAVORITES, emptySet())?.toMutableSet()
-            ?: mutableSetOf()
+        getSharedPreferences(PREFS, MODE_PRIVATE)
+            .getStringSet(KEY_FAVORITES, emptySet())
+            ?.toMutableSet() ?: mutableSetOf()
 
     private fun saveFavorites(values: Set<String>) {
-        getSharedPreferences(PREFS, MODE_PRIVATE).edit().putStringSet(KEY_FAVORITES, values).apply()
+        getSharedPreferences(PREFS, MODE_PRIVATE)
+            .edit()
+            .putStringSet(KEY_FAVORITES, values)
+            .apply()
+        renderDashboardFavorites()
     }
 
     private fun toggleCurrentFavorite() {
@@ -518,21 +484,12 @@ class MainActivity : AppCompatActivity() {
               if(fromUrl) return fromUrl;
               if(window.__pattayaLastCameraId) return normalise(window.__pattayaLastCameraId);
 
-              var selectors = [
-                '[aria-selected="true"]',
-                '[class*="selected"]',
-                '[class*="active"]',
-                '[class*="popup"]',
-                '[class*="modal"]'
-              ];
-              for(var s=0; s<selectors.length; s++){
-                var nodes = document.querySelectorAll(selectors[s]);
-                for(var i=0; i<nodes.length; i++){
-                  var text = (nodes[i].innerText || nodes[i].textContent || '').trim();
-                  if(text && text.length < 500){
-                    var id = normalise(text);
-                    if(id) return id;
-                  }
+              var nodes = document.querySelectorAll('[aria-selected="true"],[class*="selected"],[class*="active"],[class*="popup"],[class*="modal"]');
+              for(var i=0; i<nodes.length; i++){
+                var text = (nodes[i].innerText || nodes[i].textContent || '').trim();
+                if(text && text.length < 500){
+                  var id = normalise(text);
+                  if(id) return id;
                 }
               }
               return null;
@@ -547,6 +504,8 @@ class MainActivity : AppCompatActivity() {
                 return@evaluateJavascript
             }
 
+            recordRecent(selectedId)
+
             val canonicalUrl = cameraUrl(selectedId)
             val set = favorites()
             val added = if (set.any { extractCameraId(it).equals(selectedId, ignoreCase = true) }) {
@@ -559,6 +518,8 @@ class MainActivity : AppCompatActivity() {
 
             saveFavorites(set)
             updateFavoriteButton(canonicalUrl)
+            renderDashboardRecents()
+
             Toast.makeText(
                 this,
                 if (added) R.string.favorite_added else R.string.favorite_removed,
@@ -581,41 +542,36 @@ class MainActivity : AppCompatActivity() {
     private fun extractCameraId(rawUrl: String?): String? {
         if (rawUrl.isNullOrBlank()) return null
 
-        // Decode more than once because liff.state can itself contain an encoded route.
-        var decoded: String = rawUrl
+        var decoded = rawUrl
         repeat(3) {
             val next = Uri.decode(decoded)
-            if (next == decoded) return@repeat
-            decoded = next
+            if (next != decoded) decoded = next
         }
 
         Regex("""/live-cctv/([A-Za-z0-9_-]+)""", RegexOption.IGNORE_CASE)
             .find(decoded)
             ?.groupValues
             ?.getOrNull(1)
-            ?.takeIf { it.isNotBlank() }
-            ?.let { return normalizeCameraId(it) }
+            ?.let { normalizeCameraId(it) }
+            ?.let { return it }
 
         return runCatching {
             val uri = Uri.parse(rawUrl)
-            val state = uri.getQueryParameter("liff.state")
-            state?.let {
-                Regex("""/live-cctv/([A-Za-z0-9_-]+)""", RegexOption.IGNORE_CASE)
-                    .find(Uri.decode(it))
-                    ?.groupValues
-                    ?.getOrNull(1)
-                    ?.let { normalizeCameraId(it) }
-            }
+            uri.getQueryParameter("liff.state")
+                ?.let { Uri.decode(it) }
+                ?.let {
+                    Regex("""/live-cctv/([A-Za-z0-9_-]+)""", RegexOption.IGNORE_CASE)
+                        .find(it)?.groupValues?.getOrNull(1)
+                }
+                ?.let { normalizeCameraId(it) }
         }.getOrNull()
     }
 
-    private fun cameraUrl(cameraId: String): String {
-        val state = "/live-cctv/$cameraId"
-        return Uri.parse(BASE_URL).buildUpon()
-            .appendQueryParameter("liff.state", state)
+    private fun cameraUrl(cameraId: String): String =
+        Uri.parse(BASE_URL).buildUpon()
+            .appendQueryParameter("liff.state", "/live-cctv/$cameraId")
             .build()
             .toString()
-    }
 
     private fun decodeJavascriptString(value: String?): String? {
         if (value.isNullOrBlank() || value == "null") return null
@@ -624,96 +580,304 @@ class MainActivity : AppCompatActivity() {
         }.getOrNull()
     }
 
+    private fun openFavoriteCamera(cameraId: String) {
+        val normalized = normalizeCameraId(cameraId) ?: return
+        pendingFavoriteCameraId = normalized
+        binding.homePanel.visibility = View.GONE
+        binding.favoritesPanel.visibility = View.GONE
+        binding.morePanel.visibility = View.GONE
+        binding.viewerPanel.visibility = View.VISIBLE
+
+        Toast.makeText(
+            this,
+            getString(R.string.favorite_opening, normalized),
+            Toast.LENGTH_SHORT
+        ).show()
+
+        binding.webView.loadUrl(BASE_URL)
+    }
+
+    private fun openPendingFavoriteCamera() {
+        val cameraId = pendingFavoriteCameraId ?: return
+        val target = JSONObject.quote(cameraId)
+
+        binding.webView.evaluateJavascript(
+            """
+            (function(target){
+              var attempts = 0;
+              var timer = setInterval(function(){
+                attempts++;
+
+                var input = document.querySelector('input[placeholder*="Search camera"], input[type="search"], input[placeholder*="camera" i]');
+                if(input){
+                  var proto = Object.getPrototypeOf(input);
+                  var desc = proto && Object.getOwnPropertyDescriptor(proto, 'value');
+                  if(desc && desc.set) desc.set.call(input, target); else input.value = target;
+                  input.dispatchEvent(new Event('input', {bubbles:true}));
+                  input.dispatchEvent(new Event('change', {bubbles:true}));
+                }
+
+                var all = Array.from(document.querySelectorAll('button,a,[role="button"],li,tr,div,span,td'));
+                var matches = all.filter(function(el){
+                  var text = (el.innerText || el.textContent || '').replace(/\s+/g,' ').trim().toUpperCase();
+                  if(!text || text.length > 300) return false;
+                  return text === target || text.indexOf(target + ' ') === 0 || text.indexOf(' ' + target) >= 0;
+                });
+
+                matches.sort(function(a,b){
+                  return ((a.innerText||a.textContent||'').length - (b.innerText||b.textContent||'').length);
+                });
+
+                if(matches.length){
+                  var el = matches[0].closest('button,a,[role="button"],li,tr,[class*="camera"]') || matches[0];
+                  try{
+                    el.scrollIntoView({behavior:'smooth',block:'center'});
+                    el.click();
+                    window.__pattayaLastCameraId = target;
+                    clearInterval(timer);
+                  }catch(e){}
+                }
+
+                if(attempts >= 30) clearInterval(timer);
+              }, 400);
+              return 'scheduled';
+            })($target);
+            """.trimIndent(),
+            null
+        )
+
+        pendingFavoriteCameraId = null
+        recordRecent(cameraId)
+        updateFavoriteButton(cameraUrl(cameraId))
+        renderDashboardRecents()
+    }
+
     private fun renderFavorites() {
         val set = favorites().toList().sorted()
         binding.favoritesList.removeAllViews()
         binding.favoritesEmpty.visibility = if (set.isEmpty()) View.VISIBLE else View.GONE
 
         set.forEach { url ->
-            val card = MaterialCardView(this).apply {
-                radius = dp(18).toFloat()
-                cardElevation = dp(1).toFloat()
-                strokeWidth = dp(1)
-                setStrokeColor(getColor(R.color.pattaya_border))
-                setCardBackgroundColor(getColor(R.color.pattaya_surface))
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply { bottomMargin = dp(10) }
-            }
+            val id = extractCameraId(url) ?: return@forEach
+            binding.favoritesList.addView(createFavoriteRow(id, true))
+        }
+    }
 
-            val row = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(14), dp(12), dp(10), dp(12))
-            }
+    private fun renderDashboardFavorites() {
+        val ids = favorites().mapNotNull { extractCameraId(it) }.distinct().sorted().take(5)
+        binding.dashboardFavoritesList.removeAllViews()
+        binding.dashboardFavoritesEmpty.visibility = if (ids.isEmpty()) View.VISIBLE else View.GONE
 
-            val label = TextView(this).apply {
-                text = cameraLabel(url)
-                textSize = 15f
-                setTypeface(typeface, Typeface.BOLD)
-                setTextColor(getColor(R.color.pattaya_text))
-                maxLines = 2
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                setOnClickListener {
-                    extractCameraId(url)?.let { openFavoriteCamera(it) }
-                }
-            }
+        ids.forEach { id ->
+            binding.dashboardFavoritesList.addView(createDashboardCameraCard(id, "❤️ กล้องโปรด"))
+        }
+    }
 
-            val open = MaterialButton(this).apply {
-                text = getString(R.string.open)
-                isAllCaps = false
-                setOnClickListener {
-                    extractCameraId(url)?.let { openFavoriteCamera(it) }
-                }
-            }
+    private fun createFavoriteRow(id: String, removable: Boolean): View {
+        val card = MaterialCardView(this).apply {
+            radius = dp(18).toFloat()
+            cardElevation = dp(1).toFloat()
+            strokeWidth = dp(1)
+            setStrokeColor(getColor(R.color.pattaya_border))
+            setCardBackgroundColor(getColor(R.color.pattaya_surface))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = dp(9) }
+        }
 
-            val remove = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(14), dp(11), dp(9), dp(11))
+        }
+
+        val label = TextView(this).apply {
+            text = "📹 กล้อง $id"
+            textSize = 15f
+            setTypeface(typeface, Typeface.BOLD)
+            setTextColor(getColor(R.color.pattaya_text))
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+            setOnClickListener { openFavoriteCamera(id) }
+        }
+
+        val open = MaterialButton(this).apply {
+            text = getString(R.string.open)
+            isAllCaps = false
+            setOnClickListener { openFavoriteCamera(id) }
+        }
+
+        row.addView(label)
+        row.addView(open)
+
+        if (removable) {
+            val remove = MaterialButton(
+                this,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle
+            ).apply {
                 text = "×"
-                textSize = 20f
-                minimumWidth = dp(48)
+                textSize = 19f
+                minimumWidth = dp(44)
                 setOnClickListener {
                     val current = favorites()
-                    current.remove(url)
+                    current.removeAll { extractCameraId(it).equals(id, ignoreCase = true) }
                     saveFavorites(current)
                     renderFavorites()
                 }
             }
-
-            row.addView(label)
-            row.addView(open)
             row.addView(remove)
-            card.addView(row)
-            binding.favoritesList.addView(card)
+        }
+
+        card.addView(row)
+        return card
+    }
+
+    private fun createDashboardCameraCard(id: String, caption: String): View {
+        val card = MaterialCardView(this).apply {
+            radius = dp(17).toFloat()
+            cardElevation = dp(1).toFloat()
+            strokeWidth = dp(1)
+            setStrokeColor(getColor(R.color.pattaya_border))
+            setCardBackgroundColor(getColor(R.color.pattaya_surface))
+            layoutParams = LinearLayout.LayoutParams(dp(190), dp(104)).apply {
+                marginEnd = dp(8)
+            }
+            setOnClickListener { openFavoriteCamera(id) }
+        }
+
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(12), dp(10), dp(12), dp(9))
+        }
+
+        box.addView(TextView(this).apply {
+            text = caption
+            textSize = 10f
+            setTextColor(getColor(R.color.pattaya_text_muted))
+        })
+
+        box.addView(TextView(this).apply {
+            text = "กล้อง $id"
+            textSize = 16f
+            setTypeface(typeface, Typeface.BOLD)
+            setTextColor(getColor(R.color.pattaya_text))
+            setPadding(0, dp(4), 0, 0)
+        })
+
+        box.addView(TextView(this).apply {
+            text = "แตะเพื่อเปิดดูภาพสด"
+            textSize = 11f
+            setTextColor(getColor(R.color.pattaya_blue))
+            setPadding(0, dp(5), 0, 0)
+        })
+
+        card.addView(box)
+        return card
+    }
+
+    private fun loadRecents(): MutableList<RecentCamera> {
+        val raw = getSharedPreferences(PREFS, MODE_PRIVATE).getString(KEY_RECENTS, "").orEmpty()
+        if (raw.isBlank()) return mutableListOf()
+
+        return raw.split("|")
+            .mapNotNull { item ->
+                val parts = item.split("@")
+                if (parts.size != 2) return@mapNotNull null
+                val id = normalizeCameraId(parts[0]) ?: return@mapNotNull null
+                val time = parts[1].toLongOrNull() ?: return@mapNotNull null
+                RecentCamera(id, time)
+            }
+            .sortedByDescending { it.viewedAt }
+            .toMutableList()
+    }
+
+    private fun saveRecents(items: List<RecentCamera>) {
+        val raw = items.take(10).joinToString("|") { "${it.id}@${it.viewedAt}" }
+        getSharedPreferences(PREFS, MODE_PRIVATE)
+            .edit()
+            .putString(KEY_RECENTS, raw)
+            .apply()
+    }
+
+    private fun recordRecent(cameraId: String) {
+        val id = normalizeCameraId(cameraId) ?: return
+        val items = loadRecents()
+        items.removeAll { it.id.equals(id, ignoreCase = true) }
+        items.add(0, RecentCamera(id, System.currentTimeMillis()))
+        saveRecents(items)
+    }
+
+    private fun renderDashboardRecents() {
+        val items = loadRecents().take(5)
+        binding.dashboardRecentList.removeAllViews()
+        binding.dashboardRecentEmpty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
+
+        items.forEach { item ->
+            binding.dashboardRecentList.addView(
+                createDashboardCameraCard(item.id, "🕘 ${timeAgo(item.viewedAt)}")
+            )
         }
     }
 
-    private fun cameraLabel(url: String): String {
-        val id = extractCameraId(url)
-        return if (!id.isNullOrBlank()) "กล้อง $id"
-        else url.removePrefix(BASE_URL).ifBlank { getString(R.string.viewer_title) }
+    private fun timeAgo(time: Long): String {
+        val diffMinutes = ((System.currentTimeMillis() - time).coerceAtLeast(0L) / 60000L)
+        return when {
+            diffMinutes < 1 -> "เมื่อสักครู่"
+            diffMinutes < 60 -> "$diffMinutes นาทีที่แล้ว"
+            diffMinutes < 1440 -> "${diffMinutes / 60} ชั่วโมงที่แล้ว"
+            else -> "${diffMinutes / 1440} วันที่แล้ว"
+        }
     }
 
-    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+    private fun showRecentDialog() {
+        val items = loadRecents()
+        if (items.isEmpty()) {
+            Toast.makeText(this, R.string.dashboard_empty_recents, Toast.LENGTH_SHORT).show()
+            return
+        }
 
-    private fun handleUrl(uri: Uri): Boolean {
-        val scheme = uri.scheme?.lowercase()
-        val host = uri.host?.lowercase()
-        if ((scheme == "https" || scheme == "http") && host != null && host.endsWith("pattaya.go.th")) {
-            return false
-        }
-        return try {
-            startActivity(Intent(Intent.ACTION_VIEW, uri))
-            true
-        } catch (_: Exception) {
-            false
-        }
+        val labels = items.map { "กล้อง ${it.id} • ${timeAgo(it.viewedAt)}" }.toTypedArray()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.dashboard_recents_title))
+            .setItems(labels) { _, which -> openFavoriteCamera(items[which].id) }
+            .setNegativeButton("ปิด", null)
+            .show()
+    }
+
+    private fun showAlertsInfo() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("แจ้งเตือนและข้อมูลสำคัญ")
+            .setMessage("ขณะนี้สามารถตรวจสอบสภาพอากาศ ฝน การจราจร และสภาพพื้นที่จาก Dashboard และกล้องสดได้ ส่วน Push Notification อัตโนมัติจะเปิดใช้งานเมื่อมีแหล่งข้อมูลแจ้งเตือนที่เหมาะสมและเชื่อถือได้")
+            .setPositiveButton("ดูอากาศ") { _, _ -> openExternalUrl(LiveInfoRepository.WEATHER_DETAIL_URL) }
+            .setNegativeButton("ปิด", null)
+            .show()
     }
 
     private fun setupLiveInfo() {
         binding.weatherSource.text = "Open-Meteo • แตะดูพยากรณ์จากกรมอุตุนิยมวิทยา"
         binding.oilSource.text = "กระทรวงพลังงาน • แตะดูข้อมูลต้นทาง"
         binding.goldSource.text = "สมาคมค้าทองคำ • แตะดูข้อมูลต้นทาง"
+    }
+
+    private fun loadCachedInfo() {
+        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+        prefs.getString(KEY_WEATHER_CACHE, null)?.let {
+            binding.weatherValue.text = it
+            updateWeatherSummary(it)
+        }
+        prefs.getString(KEY_OIL_CACHE, null)?.let {
+            binding.oilValue.text = it
+            updateOilSummary(it)
+        }
+        prefs.getString(KEY_GOLD_CACHE, null)?.let {
+            binding.goldValue.text = it
+            updateGoldSummary(it)
+        }
     }
 
     private fun loadLiveInfo(showLoading: Boolean = false) {
@@ -725,32 +889,78 @@ class MainActivity : AppCompatActivity() {
             binding.oilValue.setText(R.string.info_loading)
             binding.goldValue.setText(R.string.info_loading)
         }
+
         binding.liveInfoUpdated.text = "กำลังอัปเดตข้อมูลล่าสุด..."
 
         Thread {
-            val data = runCatching { LiveInfoRepository.fetchWeather() }.getOrNull()
+            val result = runCatching { LiveInfoRepository.fetchWeather() }
             runOnUiThread {
-                binding.weatherValue.text = data?.summary ?: getString(R.string.info_unavailable)
+                val data = result.getOrNull()
+                if (data != null) {
+                    binding.weatherValue.text = data.summary
+                    cache(KEY_WEATHER_CACHE, data.summary)
+                    updateWeatherSummary(data.summary)
+                } else if (getCached(KEY_WEATHER_CACHE) == null) {
+                    binding.weatherValue.setText(R.string.info_unavailable)
+                }
                 updateInfoTimestamp()
             }
         }.start()
 
         Thread {
-            val data = runCatching { LiveInfoRepository.fetchOil() }.getOrNull()
+            val result = runCatching { LiveInfoRepository.fetchOil() }
             runOnUiThread {
-                binding.oilValue.text = data?.summary ?: getString(R.string.info_unavailable)
+                val data = result.getOrNull()
+                if (data != null) {
+                    binding.oilValue.text = data.summary
+                    cache(KEY_OIL_CACHE, data.summary)
+                    updateOilSummary(data.summary)
+                } else if (getCached(KEY_OIL_CACHE) == null) {
+                    binding.oilValue.setText(R.string.info_unavailable)
+                }
                 updateInfoTimestamp()
             }
         }.start()
 
         Thread {
-            val data = runCatching { LiveInfoRepository.fetchGold() }.getOrNull()
+            val result = runCatching { LiveInfoRepository.fetchGold() }
             runOnUiThread {
-                binding.goldValue.text = data?.summary ?: getString(R.string.info_unavailable)
+                val data = result.getOrNull()
+                if (data != null) {
+                    binding.goldValue.text = data.summary
+                    cache(KEY_GOLD_CACHE, data.summary)
+                    updateGoldSummary(data.summary)
+                } else if (getCached(KEY_GOLD_CACHE) == null) {
+                    binding.goldValue.setText(R.string.info_unavailable)
+                }
                 updateInfoTimestamp()
             }
         }.start()
     }
+
+    private fun updateWeatherSummary(summary: String) {
+        val value = Regex("""(-?\d+(?:\.\d+)?)°C""").find(summary)?.groupValues?.getOrNull(1)
+        binding.weatherSummaryValue.text = value?.let { "$it°C" } ?: "--°C"
+    }
+
+    private fun updateOilSummary(summary: String) {
+        val value = Regex("""Gasohol 95\s+฿([0-9.]+)""", RegexOption.IGNORE_CASE)
+            .find(summary)?.groupValues?.getOrNull(1)
+        binding.oilSummaryValue.text = value ?: "--.--"
+    }
+
+    private fun updateGoldSummary(summary: String) {
+        val value = Regex("""ขายออก ฿([0-9,.]+)""")
+            .find(summary)?.groupValues?.getOrNull(1)
+        binding.goldSummaryValue.text = value ?: "--,---"
+    }
+
+    private fun cache(key: String, value: String) {
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString(key, value).apply()
+    }
+
+    private fun getCached(key: String): String? =
+        getSharedPreferences(PREFS, MODE_PRIVATE).getString(key, null)
 
     private fun updateInfoTimestamp() {
         val time = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("th", "TH")).format(Date())
@@ -765,11 +975,29 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun handleUrl(uri: Uri): Boolean {
+        val scheme = uri.scheme?.lowercase()
+        val host = uri.host?.lowercase()
+        if ((scheme == "https" || scheme == "http") &&
+            host != null &&
+            host.endsWith("pattaya.go.th")
+        ) {
+            return false
+        }
+
+        return try {
+            startActivity(Intent(Intent.ACTION_VIEW, uri))
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     private fun hideCustomView() {
         val view = customView ?: return
         binding.fullscreenContainer.removeView(view)
         binding.fullscreenContainer.visibility = View.GONE
-        binding.viewerPanel.visibility = View.VISIBLE
+        binding.mainShell.visibility = View.VISIBLE
         customViewCallback?.onCustomViewHidden()
         customView = null
         customViewCallback = null
@@ -780,11 +1008,15 @@ class MainActivity : AppCompatActivity() {
         val controller = WindowInsetsControllerCompat(window, window.decorView)
         if (enabled) {
             controller.hide(WindowInsetsCompat.Type.systemBars())
-            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         } else {
             controller.show(WindowInsetsCompat.Type.systemBars())
         }
     }
+
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
 
     override fun onResume() {
         super.onResume()
