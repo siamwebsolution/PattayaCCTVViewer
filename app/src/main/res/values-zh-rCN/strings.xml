@@ -58,7 +58,7 @@
     <string name="live_info_updated">最后更新：--</string>
     <string name="weather_source">Open-Meteo • 点击查看天气来源</string>
     <string name="weather_source_short">Open-Meteo • 点击查看来源</string>
-    <string name="oil_source">泰国能源部 • 点击查看来源</string>
+    <string name="oil_source">PTT OR • 零售燃油价格 • 点击查看来源</string>
     <string name="gold_source">泰国黄金交易商协会 • 点击查看来源</string>
     <string name="live_info_updating">正在更新最新信息...</string>
     <string name="live_info_updated_auto">最后更新：%1$s • 每 10 分钟自动更新</string>
@@ -126,7 +126,7 @@
     <string name="more_history">📄 如何申请历史 CCTV 录像</string>
     <string name="more_theme">🌗 更换主题</string>
     <string name="more_language">🌐 语言 / Language / ภาษา</string>
-    <string name="more_about_text">Pattaya CCTV v2.7.0\n更方便地访问芭堤雅 CCTV、城市活动与出行信息。</string>
+    <string name="more_about_text">Pattaya CCTV v2.8.0\n更方便地访问芭堤雅 CCTV、城市活动与出行信息。</string>
     <string name="more_history_text">如因事故或事件需要历史 CCTV 录像，请联系芭堤雅市政府了解官方流程和所需文件。</string>
 
     <string name="language_title">选择语言</string>
@@ -169,4 +169,14 @@
     <string name="nav_map">地图</string>
     <string name="nav_favorite">收藏</string>
     <string name="nav_more">更多</string>
+    <string name="quick_facebook">📘 Facebook • สายตรงพี่เบียร์ พัทยา</string>
+    <string name="ticker_default">📢 芭堤雅动态 • 出行前查看交通、实时 CCTV、活动和实用信息</string>
+    <string name="ticker_weather">🌦️ %1$s</string>
+    <string name="ticker_oil">⛽ %1$s</string>
+    <string name="ticker_gold">🟡 %1$s</string>
+    <string name="ticker_event">📅 活动：%1$s %2$s</string>
+    <string name="ticker_cctv">📹 芭堤雅 CCTV 超过 600 个点位</string>
+    <string name="ticker_facebook">📘 สายตรงพี่เบียร์ พัทยา</string>
+    <string name="calendar_event_legend">● 有活动的日期</string>
+    <string name="calendar_day_events">%1$d 日有 %2$d 个活动</string>
 </resources>
